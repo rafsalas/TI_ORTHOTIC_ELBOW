@@ -27,6 +27,9 @@ out_native = unicode2native(out_uni)
 out_hex = dec2hex(out_native,2)
 
 
+%x = linspace(0,1,69);
+%plot(x,out_byte) 
+
 fclose(s)
 delete(s)
 clear s
