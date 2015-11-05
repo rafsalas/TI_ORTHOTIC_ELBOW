@@ -20,10 +20,12 @@ set(s, 'StopBit', 1);
 fopen(s);
 
 %Prompt Data Stream
-%fprintf(s,'%c','A');
+fprintf(s,'A');
 
 out_uni = fscanf(s)
-out_byte = unicode2native(out_uni)%,'Hex') 
+out_native = unicode2native(out_uni)
+out_hex = dec2hex(out_native,2)
+
 
 fclose(s)
 delete(s)
