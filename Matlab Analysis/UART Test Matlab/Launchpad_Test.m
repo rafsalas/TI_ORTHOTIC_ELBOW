@@ -25,6 +25,9 @@ fopen(s);
 out_uni = fscanf(s)
 out_byte = unicode2native(out_uni)%,'Hex') 
 
+%x = linspace(0,1,69);
+%plot(x,out_byte) 
+
 fclose(s)
 delete(s)
 clear s
