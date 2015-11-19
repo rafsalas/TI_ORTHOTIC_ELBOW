@@ -6,17 +6,52 @@
 #include <driverlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <QMathLib.h>
 
-uint8_t Drdy = 0x00;
+//-----------------------------------------------Structs
+struct uint24_t {
+  uint32_t value : 24;
+};
 
-static volatile uint16_t curADCResult;
-static volatile float normalizedADCRes;
+//-----------------------------------------------Variables
+const int bit_stream_length = 24; // length in bytes, data + status byte
+const int msp_clk_rate = 48000;//48Mhz
+const int ads_clk_rate = 2048; //2.048 MHz
+uint8_t Drdy = 0x00; //Flag for SPI
+uint8_t spi_data[50][24];
+int sample[50];
+uint8_t spi_index = 0; // used to keep track of the first diminsion of the spi_dta matrix
 
-static uint16_t resultsBuffer[2];
-volatile uint16_t a,b =0;
+const uint8_t window = 50; //moving average window
+volatile int16_t samples [50]; //raw signal
+volatile int16_t filtered [50]; //filtered signal
+static uint32_t sum = 0; //sum for moving average
 
+
+static uint16_t resultsBuffer[2];// used for ADC
+volatile uint16_t a,b =0; //used for adc testing
+//-----------------------------------------------Filtering
+void conditionSamples(){
+	uint8_t i = 0;
+	for(i = 0; i < window;++i){
+		samples[i] = _Q1abs(samples[i]);//rectify
+		//moving average
+		sum = sum + samples[i];
+		if(i>window){
+			sum = sum - samples[i-window];
+			filtered[i] = sum/window;
+		}
+		else if(i = window){
+			filtered[i] = sum/window;
+		}
+		else{
+			filtered[i] = 0;
+		}
+		MAP_UART_transmitData(EUSCI_A0_MODULE, filtered[i]);
+	}
+}
+//-----------------------------------------------ADC
 void adc(){
-
 
     MAP_PCM_setPowerState(PCM_AM_LDO_VCORE1);
     MAP_CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
@@ -60,6 +95,20 @@ void adc(){
     MAP_ADC14_toggleConversionTrigger();
 
 }
+//-----------------------------------------------SPI
+int32_t twos_to_signed (uint8_t msb, uint8_t mid, uint8_t lsb){
+	uint32_t num = (msb<<24)|(mid<<16)|(lsb<<8);// concatonate bytes
+    int32_t num2;
+    if(((int)num)<0){
+            num2=-((~num)+1); //2's complement
+    }
+    else{
+            num2 = num;
+    }
+    num2 = num2>>2; //shift to correct for 2 bit offset needed for 2's complement
+
+    return num2;
+}
 
 void spi_setup(){
 /* SPI Master Configuration Parameter */
@@ -102,6 +151,25 @@ void spi_setup(){
 
 }
 
+void read_message(){
+	unsigned int cycle = (msp_clk_rate/ads_clk_rate)+1; // cycle ratio needed for delays between reading bytes
+	unsigned int delay = 4*cycle;
+	unsigned int iterator = 0;
+	unsigned int iter = 0;
+	if(spi_index == 50){//reset  spi_index
+		spi_index = 0;
+	}
+
+	SPI_receiveData(EUSCI_B0_MODULE); //read status byte
+
+	for(iterator = 1;iterator < bit_stream_length;++iterator){
+		for(iter = 0; iter<delay ;++iter){}// delay for 4 cycles
+			spi_data[spi_index][iterator] = SPI_receiveData(EUSCI_B0_MODULE); //read a byte
+	}
+	spi_index++; //increment first dimension of spi_data index
+}
+
+//-----------------------------------------------Drdy
 void drdy_setup(){
     /* Configuring P1.0 as output and P1.1 (switch) as input */
     MAP_GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
@@ -115,7 +183,7 @@ void drdy_setup(){
     /* Enabling MASTER interrupts */
     MAP_Interrupt_enableMaster();
 }
-
+//-----------------------------------------------Uart
 void uart_setup(){
 	const eUSCI_UART_Config uartConfig =
 	{
@@ -154,12 +222,11 @@ void main(void)
 	//void Interrupt_setPriority(uint32_t interruptNumber, uint8_t priority);
 	MAP_WDT_A_holdTimer();
 	/* Enabling SRAM Bank Retention */
-	MAP_SysCtl_enableSRAMBankRetention(SYSCTL_SRAM_BANK1);
+	//MAP_SysCtl_enableSRAMBankRetention(SYSCTL_SRAM_BANK1);
 	//spi_setup();
-
-	drdy_setup();
-	adc();
-
+	//drdy_setup();
+	//adc();
+	uart_setup();
     // SPI, put CS high P5.2 and polling to see if the TX buffer is ready or busy
   /*  GPIO_setOutputLowOnPin(GPIO_PORT_P5, GPIO_PIN2);//set low to turn on
 
@@ -174,14 +241,26 @@ void main(void)
 	*/
     //start loop
 	//RXData[p][j] = SPI_receiveData(EUSCI_B0_MODULE);
+	MAP_UART_transmitData(EUSCI_A0_MODULE, 0);
+	int i;
+	uint16_t data;
     while(1){
-    	MAP_PCM_gotoLPM3();
+    	//MAP_PCM_gotoLPM3();
+
+    	//for(i = 0;i<100000;++i){
+
+    	//}
+    	//MAP_UART_transmitData(EUSCI_A0_MODULE, 1);
+    	//data = MAP_UART_receiveData(EUSCI_A0_MODULE);
     }
 }
+
+//-----------------------------------------------Interrupts
 
 /* This interrupt is fired whenever a conversion is completed and placed in
  * ADC_MEM1. This signals the end of conversion and the results array is
  * grabbed and placed in resultsBuffer */
+
 void adc_isr(void)
 {
     uint64_t status;
