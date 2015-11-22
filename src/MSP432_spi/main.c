@@ -7,7 +7,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <QMathLib.h>
-
+#include "printf.h"
 //-----------------------------------------------Structs
 struct uint24_t {
   uint32_t value : 24;
@@ -18,8 +18,10 @@ const int bit_stream_length = 24; // length in bytes, data + status byte
 const int msp_clk_rate = 48000;//48Mhz
 const int ads_clk_rate = 2048; //2.048 MHz
 uint8_t Drdy = 0x00; //Flag for SPI
+uint8_t sample_rdy=0x00; //Flag when window amount of samples read.
 uint8_t spi_data[50][24];
-int sample[50];
+int32_t sample[50];
+
 uint8_t spi_index = 0; // used to keep track of the first diminsion of the spi_dta matrix
 
 const uint8_t window = 50; //moving average window
@@ -31,6 +33,7 @@ static uint32_t sum = 0; //sum for moving average
 static uint16_t resultsBuffer[2];// used for ADC
 volatile uint16_t a,b =0; //used for adc testing
 //-----------------------------------------------Filtering
+
 void conditionSamples(){
 	uint8_t i = 0;
 	for(i = 0; i < window;++i){
@@ -51,6 +54,7 @@ void conditionSamples(){
 	}
 }
 //-----------------------------------------------ADC
+
 void adc(){
 
     MAP_PCM_setPowerState(PCM_AM_LDO_VCORE1);
@@ -96,7 +100,10 @@ void adc(){
 
 }
 //-----------------------------------------------SPI
-int32_t twos_to_signed (uint8_t msb, uint8_t mid, uint8_t lsb){
+
+int32_t twos_to_signed (uint32_t msb, uint32_t mid, uint32_t lsb){
+
+
 	uint32_t num = (msb<<24)|(mid<<16)|(lsb<<8);// concatonate bytes
     int32_t num2;
     if(((int)num)<0){
@@ -109,6 +116,7 @@ int32_t twos_to_signed (uint8_t msb, uint8_t mid, uint8_t lsb){
 
     return num2;
 }
+
 
 void spi_setup(){
 /* SPI Master Configuration Parameter */
@@ -156,17 +164,38 @@ void read_message(){
 	unsigned int delay = 4*cycle;
 	unsigned int iterator = 0;
 	unsigned int iter = 0;
-	if(spi_index == 50){//reset  spi_index
+	uint32_t container[3];
+
+	if(spi_index == window){//condition sample and reset  spi_index
+		conditionSamples();
 		spi_index = 0;
 	}
-
-	SPI_receiveData(EUSCI_B0_MODULE); //read status byte
-
-	for(iterator = 1;iterator < bit_stream_length;++iterator){
-		for(iter = 0; iter<delay ;++iter){}// delay for 4 cycles
-			spi_data[spi_index][iterator] = SPI_receiveData(EUSCI_B0_MODULE); //read a byte
+	uint8_t it = 0;
+	for(it=0;it<3;++it){
+		SPI_receiveData(EUSCI_B0_MODULE); //read status byte
 	}
+	for(iterator = 0;iterator < bit_stream_length;++iterator){
+
+			for(iter = 0; iter<delay ;++iter){}// delay for 4 cycles
+			container[iterator%3] = SPI_receiveData(EUSCI_B0_MODULE); //read a byte
+			if(iterator%3 == 2){
+				sample[spi_index]= twos_to_signed (container[0],container[1],container[2]);
+			}
+		}
+	/*if(spi_index==49){
+		sample_rdy = 0x01;
+	}*/
 	spi_index++; //increment first dimension of spi_data index
+}
+
+void spi_start(){
+    uint8_t start_byte = 0x08;
+
+    /* Polling to see if the TX buffer is ready */
+    while (!(SPI_getInterruptStatus(EUSCI_A0_MODULE,EUSCI_A_SPI_TRANSMIT_INTERRUPT)));
+    /* Transmitting data to slave */
+    SPI_transmitData(EUSCI_A0_MODULE, start_byte);
+
 }
 
 //-----------------------------------------------Drdy
@@ -183,6 +212,7 @@ void drdy_setup(){
     /* Enabling MASTER interrupts */
     MAP_Interrupt_enableMaster();
 }
+
 //-----------------------------------------------Uart
 void uart_setup(){
 	const eUSCI_UART_Config uartConfig =
@@ -192,16 +222,16 @@ void uart_setup(){
 	        0,                                       // UCxBRF = 0
 	        111,                                       // UCxBRS = 111
 	        EUSCI_A_UART_NO_PARITY,                  // No Parity
-	        EUSCI_A_UART_MSB_FIRST,                  // MSB First
+	        EUSCI_A_UART_LSB_FIRST,                  // LSB First
 	        EUSCI_A_UART_ONE_STOP_BIT,               // One stop bit
 	        EUSCI_A_UART_MODE,                       // UART mode
 	        EUSCI_A_UART_OVERSAMPLING_BAUDRATE_GENERATION  // Oversampling
 	};
 
     /* Selecting P1.2 and P1.3 in UART mode and P1.0 as output (LED) */
-    MAP_GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P1, GPIO_PIN2 | GPIO_PIN3, GPIO_PRIMARY_MODULE_FUNCTION);
-    MAP_GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
-    MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
+    MAP_GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P1,GPIO_PIN1 | GPIO_PIN2 | GPIO_PIN3, GPIO_PRIMARY_MODULE_FUNCTION);
+    //MAP_GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
+    //MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
 
     /* Setting DCO to 48MHz (upping Vcore) */
     MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
@@ -212,9 +242,12 @@ void uart_setup(){
 
     /* Enable UART module */
     MAP_UART_enableModule(EUSCI_A0_MODULE);
-
+    /* Enabling interrupts */
+  //  MAP_UART_enableInterrupt(EUSCI_A0_MODULE, EUSCI_A_UART_RECEIVE_INTERRUPT);
+  //  MAP_Interrupt_enableInterrupt(INT_EUSCIA0);
     //MAP_UART_transmitData(EUSCI_A0_MODULE, Data);
     //Data = MAP_UART_receiveData(EUSCI_A0_MODULE);
+    MAP_Interrupt_enableMaster();
 }
 
 void main(void)
@@ -241,17 +274,22 @@ void main(void)
 	*/
     //start loop
 	//RXData[p][j] = SPI_receiveData(EUSCI_B0_MODULE);
-	MAP_UART_transmitData(EUSCI_A0_MODULE, 0);
+	//MAP_UART_transmitData(EUSCI_A0_MODULE, 0x10);
 	int i;
-	uint16_t data;
+	char *s = "printf test";
+	//uint16_t udata;
     while(1){
     	//MAP_PCM_gotoLPM3();
+    	for(i = 0 ;i <5000000; ++i){
 
-    	//for(i = 0;i<100000;++i){
 
-    	//}
-    	//MAP_UART_transmitData(EUSCI_A0_MODULE, 1);
-    	//data = MAP_UART_receiveData(EUSCI_A0_MODULE);
+    	}
+    	printf(EUSCI_A0_MODULE, "hi: %d \r\n",i);
+    	//UART_transmitData
+    	//printf(EUSCI_A0_MODULE, "String\n");
+    	//printf(EUSCI_A0_MODULE, "S");
+    	//MAP_UART_transmitData(EUSCI_A0_MODULE, 0x11);
+    	//udata = MAP_UART_receiveData(EUSCI_A0_MODULE);
     }
 }
 
@@ -293,5 +331,27 @@ void gpio_isr(void)
     	Drdy = 0x01;
         MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
     }
+
+}
+
+/* EUSCI A0 UART ISR - Echos data back to PC host */
+void euscia0_isr(void)
+{
+  /*  uint32_t status = MAP_UART_getEnabledInterruptStatus(EUSCI_A0_MODULE);
+
+    MAP_UART_clearInterruptFlag(EUSCI_A0_MODULE, status);
+
+    if(status & EUSCI_A_UART_RECEIVE_INTERRUPT)
+    {
+        RXData = MAP_UART_receiveData(EUSCI_A0_MODULE);
+
+        if(RXData != TXData)              // Check value
+        {
+            MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            while(1);                       // Trap CPU
+        }
+        TXData++;
+        MAP_Interrupt_disableSleepOnIsrExit();
+    }*/
 
 }

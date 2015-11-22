@@ -48,6 +48,7 @@ static void defaultISR(void);
 extern void _c_int00(void);
 extern void adc_isr(void);
 extern void gpio_isr(void);
+extern void euscia0_isr(void);
 /* Linker variable that marks the top of the stack. */
 extern unsigned long __STACK_END;
 
@@ -96,7 +97,7 @@ void (* const interruptVectors[])(void) =
     defaultISR,                             /* TA2_N ISR                 */
     defaultISR,                             /* TA3_0 ISR                 */
     defaultISR,                             /* TA3_N ISR                 */
-    defaultISR,                             /* EUSCIA0 ISR               */
+	euscia0_isr,                             /* EUSCIA0 ISR               */
     defaultISR,                             /* EUSCIA1 ISR               */
     defaultISR,                             /* EUSCIA2 ISR               */
     defaultISR,                             /* EUSCIA3 ISR               */
