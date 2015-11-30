@@ -47,7 +47,8 @@ static void defaultISR(void);
 /* processor is started                                                     */
 extern void _c_int00(void);
 extern void adc_isr(void);
-extern void gpio_isr(void);
+extern void gpio_isr4(void);
+extern void gpio_isr3(void);
 extern void euscia0_isr(void);
 /* Linker variable that marks the top of the stack. */
 extern unsigned long __STACK_END;
@@ -116,10 +117,10 @@ void (* const interruptVectors[])(void) =
     defaultISR,                             /* DMA_INT2 ISR              */
     defaultISR,                             /* DMA_INT1 ISR              */
     defaultISR,                             /* DMA_INT0 ISR              */
-	gpio_isr,                             /* PORT1 ISR                 */
+	defaultISR,                             /* PORT1 ISR                 */
     defaultISR,                             /* PORT2 ISR                 */
-    defaultISR,                             /* PORT3 ISR                 */
-    defaultISR,                             /* PORT4 ISR                 */
+    gpio_isr3,                             /* PORT3 ISR                 */
+    gpio_isr4,                             /* PORT4 ISR                 */
     defaultISR,                             /* PORT5 ISR                 */
     defaultISR,                             /* PORT6 ISR                 */
     defaultISR,                             /* Reserved 41               */

@@ -21,7 +21,6 @@ uint8_t Drdy = 0x00; //Flag for SPI
 uint8_t sample_rdy=0x00; //Flag when window amount of samples read.
 uint8_t spi_data[50][24];
 int32_t sample[50];
-
 uint8_t spi_index = 0; // used to keep track of the first diminsion of the spi_dta matrix
 
 const uint8_t window = 50; //moving average window
@@ -29,6 +28,8 @@ volatile int16_t samples [50]; //raw signal
 volatile int16_t filtered [50]; //filtered signal
 static uint32_t sum = 0; //sum for moving average
 
+volatile uint32_t pos_pulse_count = 0;
+volatile uint32_t neg_pulse_count = 0;
 
 static uint16_t resultsBuffer[2];// used for ADC
 volatile uint16_t a,b =0; //used for adc testing
@@ -138,16 +139,13 @@ void spi_setup(){
 	MAP_CS_startLFXT(CS_LFXT_DRIVE0); //LFXTDRIVE_0 give the lowest current consumption according to the msp432 header file for this board
 
 	//selecting pins for spi mode
-	MAP_GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P1 , GPIO_PIN5 |GPIO_PIN6|GPIO_PIN7,
+	//pin 1 = clk  pin 6 = mosi pin 7 =miso
+	MAP_GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P1 , GPIO_PIN5 | GPIO_PIN6 | GPIO_PIN7,
 			GPIO_PRIMARY_MODULE_FUNCTION );
 
 	//selecting gpio pin for CS
-	MAP_GPIO_setAsOutputPin(GPIO_PORT_P5, GPIO_PIN2);//set direction
-	MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P5, GPIO_PIN2); //set high to turn off
-
-    //Drdy
-	MAP_GPIO_setAsInputPinWithPullDownResistor(GPIO_PORT_P5, GPIO_PIN1);//set direction
-   // Drdy = GPIO_getInputPinValue(GPIO_PORT_P5, GPIO_PIN1);
+	//MAP_GPIO_setAsOutputPin(GPIO_PORT_P5, GPIO_PIN2);//set direction
+	//MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P5, GPIO_PIN2); //set high to turn off
 
 	//configuring SPI for 3wire master mode
 	MAP_SPI_initMaster(EUSCI_B0_MODULE,&spiMasterConfig);//EUSCI_B0_MODULE = Base address of module registers
@@ -180,11 +178,13 @@ void read_message(){
 			container[iterator%3] = SPI_receiveData(EUSCI_B0_MODULE); //read a byte
 			if(iterator%3 == 2){
 				sample[spi_index]= twos_to_signed (container[0],container[1],container[2]);
+				printf(EUSCI_A0_MODULE, "value: %i \r\n", sample[spi_index]);
 			}
-		}
+	}
 	/*if(spi_index==49){
 		sample_rdy = 0x01;
 	}*/
+	Drdy = 0x01;
 	spi_index++; //increment first dimension of spi_data index
 }
 
@@ -192,22 +192,22 @@ void spi_start(){
     uint8_t start_byte = 0x08;
 
     /* Polling to see if the TX buffer is ready */
-    while (!(SPI_getInterruptStatus(EUSCI_A0_MODULE,EUSCI_A_SPI_TRANSMIT_INTERRUPT)));
+    while (!(SPI_getInterruptStatus(EUSCI_B0_MODULE,EUSCI_B_SPI_TRANSMIT_INTERRUPT)));
     /* Transmitting data to slave */
-    SPI_transmitData(EUSCI_A0_MODULE, start_byte);
+    SPI_transmitData(EUSCI_B0_MODULE, start_byte);
 
 }
 
 //-----------------------------------------------Drdy
 void drdy_setup(){
     /* Configuring P1.0 as output and P1.1 (switch) as input */
-    MAP_GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
+    //MAP_GPIO_setAsOutputPin(GPIO_PORT_P3, GPIO_PIN0);
 
-    /* Configuring P1.1 as an input and enabling interrupts */
-    MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P1, GPIO_PIN1);
-    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P1, GPIO_PIN1);
-    MAP_GPIO_enableInterrupt(GPIO_PORT_P1, GPIO_PIN1);
-    MAP_Interrupt_enableInterrupt(INT_PORT1);
+    /* Configuring P3.5 as an input and enabling interrupts */
+    MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P3, GPIO_PIN5);
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P3, GPIO_PIN5);
+    MAP_GPIO_enableInterrupt(GPIO_PORT_P3, GPIO_PIN5);
+    MAP_Interrupt_enableInterrupt(INT_PORT3);
 
     /* Enabling MASTER interrupts */
     MAP_Interrupt_enableMaster();
@@ -236,7 +236,7 @@ void uart_setup(){
     /* Setting DCO to 48MHz (upping Vcore) */
     MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
     CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
-
+    //CS_setExternalClockSourceFrequency
     /* Configuring UART Module */
     MAP_UART_initModule(EUSCI_A0_MODULE, &uartConfig);
 
@@ -250,46 +250,55 @@ void uart_setup(){
     MAP_Interrupt_enableMaster();
 }
 
+
+volatile int css = 0;
 void main(void)
 {
 	//void Interrupt_setPriority(uint32_t interruptNumber, uint8_t priority);
 	MAP_WDT_A_holdTimer();
 	/* Enabling SRAM Bank Retention */
 	//MAP_SysCtl_enableSRAMBankRetention(SYSCTL_SRAM_BANK1);
-	//spi_setup();
-	//drdy_setup();
+	spi_setup();
+//	drdy_setup();
 	//adc();
-	uart_setup();
-    // SPI, put CS high P5.2 and polling to see if the TX buffer is ready or busy
-  /*  GPIO_setOutputLowOnPin(GPIO_PORT_P5, GPIO_PIN2);//set low to turn on
-
-   //Not sure I need to send a transmission
-    TXData = 0x40;
-    while (!(SPI_getInterruptStatus(EUSCI_B0_MODULE,EUSCI_B_SPI_TRANSMIT_INTERRUPT)));
-    SPI_transmitData(EUSCI_B0_MODULE, TXData);
-
-    TXData = 0x00;
-    while (!(SPI_getInterruptStatus(EUSCI_B0_MODULE,EUSCI_B_SPI_TRANSMIT_INTERRUPT)));
-    SPI_transmitData(EUSCI_B0_MODULE, TXData);
-	*/
-    //start loop
-	//RXData[p][j] = SPI_receiveData(EUSCI_B0_MODULE);
-	//MAP_UART_transmitData(EUSCI_A0_MODULE, 0x10);
+	//uart_setup();
 	int i;
-	char *s = "printf test";
-	//uint16_t udata;
+
+	unsigned int cycle = (msp_clk_rate/ads_clk_rate)+1; // cycle ratio needed for delays between reading bytes
+	unsigned int delay = 4*cycle;
+	unsigned int iterator = 0;
+	unsigned int iter = 0;
+
+
+	SPI_transmitData(EUSCI_B0_MODULE, 0x02);//wake up
+	SPI_transmitData(EUSCI_B0_MODULE, 0x02);
+	SPI_transmitData(EUSCI_B0_MODULE, 0x02);
+	SPI_transmitData(EUSCI_B0_MODULE, 0x02);
+	SPI_transmitData(EUSCI_B0_MODULE, 0x02);
+	SPI_transmitData(EUSCI_B0_MODULE, 0x08);
+	//for(iter = 0; iter<delay ;++iter){}// delay for 4 cycles
+	//uint8_t start_byte = 0x08;
+  //  SPI_transmitData(EUSCI_B0_MODULE, 0x08);
     while(1){
-    	//MAP_PCM_gotoLPM3();
-    	for(i = 0 ;i <5000000; ++i){
 
-
+    	SPI_transmitData(EUSCI_B0_MODULE, 0x00);
+    	/*if(CS_getSMCLK()){
+    	MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P5, GPIO_PIN2); //set high to turn off
     	}
-    	printf(EUSCI_A0_MODULE, "hi: %d \r\n",i);
-    	//UART_transmitData
-    	//printf(EUSCI_A0_MODULE, "String\n");
-    	//printf(EUSCI_A0_MODULE, "S");
-    	//MAP_UART_transmitData(EUSCI_A0_MODULE, 0x11);
-    	//udata = MAP_UART_receiveData(EUSCI_A0_MODULE);
+    	else{
+    		MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P5, GPIO_PIN2); //set high to turn off
+    	}*/
+    	//spi_start();
+    	//MAP_PCM_gotoLPM3();
+    	//_delayCycles
+
+    	//SPI_transmitData(EUSCI_B0_MODULE, start_byte);
+    	//for(i = 0 ;i <100; ++i){
+    	//}
+    	css = SPI_receiveData(EUSCI_B0_MODULE);
+
+    	//start_byte = 0x00;
+    	//printf(EUSCI_A0_MODULE, "hi: %i \r\n",CS_getACLK());
     }
 }
 
@@ -318,18 +327,34 @@ void adc_isr(void)
 
 }
 
-void gpio_isr(void)
+void gpio_isr4(void)
 {
     uint32_t status;
 
-    status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P1);
-    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P1, status);
+    status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P4);
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P4, status);
+
+	if(status & GPIO_PIN0){ //one step CCW
+		stepCCW(); //call function for step CCW
+	}else{ //one step CW
+		stepCW(); //call function for step CW
+	}
+
+}
+
+void gpio_isr3(void)
+{
+    uint32_t status;
+
+    status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P3);
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P3, status);
 
     /* set Drdy Flag*/
-    if(status & GPIO_PIN1)
+    if(status & GPIO_PIN5)
     {
-    	Drdy = 0x01;
-        MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+    //	Drdy = 0x01;
+     //   MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+    //    read_message();
     }
 
 }
