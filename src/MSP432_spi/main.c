@@ -13,11 +13,22 @@ struct uint24_t {
   uint32_t value : 24;
 };
 
+//-----------------------------------------------ADS1299 OpCodes
+const uint8_t WAKEUP_OP = 0x02;
+const uint8_t STANDBY_OP = 0x04;
+const uint8_t RESET_OP = 0x06;
+const uint8_t START_OP = 0x08;
+const uint8_t STOP_OP = 0x0A;
+const uint8_t RDATAC_OP = 0x10;
+const uint8_t SDATAC_OP = 0x11;
+const uint8_t RDATA_OP = 0x12;
+
+
 //-----------------------------------------------Variables
 const int bit_stream_length = 24; // length in bytes, data + status byte
 const int msp_clk_rate = 48000;//48Mhz
 const int ads_clk_rate = 2048; //2.048 MHz
-uint8_t Drdy = 0x00; //Flag for SPI
+uint8_t Drdy = 0; //Flag for SPI
 uint8_t sample_rdy=0x00; //Flag when window amount of samples read.
 uint8_t spi_data[50][24];
 int32_t sample[50];
@@ -184,7 +195,9 @@ void read_message(){
 	/*if(spi_index==49){
 		sample_rdy = 0x01;
 	}*/
-	Drdy = 0x01;
+
+	//Drdy = 0x01;
+
 	spi_index++; //increment first dimension of spi_data index
 }
 
@@ -259,7 +272,7 @@ void main(void)
 	/* Enabling SRAM Bank Retention */
 	//MAP_SysCtl_enableSRAMBankRetention(SYSCTL_SRAM_BANK1);
 	spi_setup();
-//	drdy_setup();
+	drdy_setup();
 	//adc();
 	//uart_setup();
 	int i;
@@ -270,18 +283,24 @@ void main(void)
 	unsigned int iter = 0;
 
 
-	SPI_transmitData(EUSCI_B0_MODULE, 0x02);//wake up
-	SPI_transmitData(EUSCI_B0_MODULE, 0x02);
-	SPI_transmitData(EUSCI_B0_MODULE, 0x02);
-	SPI_transmitData(EUSCI_B0_MODULE, 0x02);
-	SPI_transmitData(EUSCI_B0_MODULE, 0x02);
-	SPI_transmitData(EUSCI_B0_MODULE, 0x08);
+	SPI_transmitData(EUSCI_B0_MODULE, RDATAC_OP);
+
 	//for(iter = 0; iter<delay ;++iter){}// delay for 4 cycles
 	//uint8_t start_byte = 0x08;
   //  SPI_transmitData(EUSCI_B0_MODULE, 0x08);
     while(1){
+    	//SPI_transmitData(EUSCI_B0_MODULE, RDATAC_OP);
+		//SPI_transmitData(EUSCI_B0_MODULE, 0x00);
 
-    	SPI_transmitData(EUSCI_B0_MODULE, 0x00);
+    	if(Drdy==1)
+    	{
+    		for(i=0; i<216; ++i)
+    		{
+    			SPI_transmitData(EUSCI_B0_MODULE, 0x00);
+    		}
+    		Drdy=0;
+    	}
+
     	/*if(CS_getSMCLK()){
     	MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P5, GPIO_PIN2); //set high to turn off
     	}
@@ -352,10 +371,18 @@ void gpio_isr3(void)
     /* set Drdy Flag*/
     if(status & GPIO_PIN5)
     {
-    //	Drdy = 0x01;
+    	Drdy = 1;
      //   MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
     //    read_message();
     }
+
+    int i;
+	for(i=0; i<216; ++i)
+	{
+		//SPI_transmitData(EUSCI_B0_MODULE, 0x00);
+    	css = SPI_receiveData(EUSCI_B0_MODULE);
+
+	}
 
 }
 
