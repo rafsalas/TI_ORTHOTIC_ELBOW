@@ -1,17 +1,18 @@
 
-//***************************************************************************************
-
-//***************************************************************************************
+/***************************************************************************************
+ * MAIN
+ *
+ *  Created on: Dec, 2015
+ *      Author: rafael
+***************************************************************************************/
 
 #include <driverlib.h>
 #include <stdint.h>
 #include <stdbool.h>
 #include <QMathLib.h>
 #include "printf.h"
-//-----------------------------------------------Structs
-struct uint24_t {
-  uint32_t value : 24;
-};
+#include "RadialEncoder.h"
+#include <string.h>
 
 //-----------------------------------------------Variables
 const int bit_stream_length = 24; // length in bytes, data + status byte
@@ -28,8 +29,9 @@ volatile int16_t samples [50]; //raw signal
 volatile int16_t filtered [50]; //filtered signal
 static uint32_t sum = 0; //sum for moving average
 
-volatile uint32_t pos_pulse_count = 0;
-volatile uint32_t neg_pulse_count = 0;
+volatile int32_t raw_position = 0;
+volatile int32_t pos_pulse_count = 0;
+volatile int32_t neg_pulse_count = 0;
 
 static uint16_t resultsBuffer[2];// used for ADC
 volatile uint16_t a,b =0; //used for adc testing
@@ -103,8 +105,6 @@ void adc(){
 //-----------------------------------------------SPI
 
 int32_t twos_to_signed (uint32_t msb, uint32_t mid, uint32_t lsb){
-
-
 	uint32_t num = (msb<<24)|(mid<<16)|(lsb<<8);// concatonate bytes
     int32_t num2;
     if(((int)num)<0){
@@ -114,7 +114,6 @@ int32_t twos_to_signed (uint32_t msb, uint32_t mid, uint32_t lsb){
             num2 = num;
     }
     num2 = num2>>2; //shift to correct for 2 bit offset needed for 2's complement
-
     return num2;
 }
 
@@ -143,17 +142,14 @@ void spi_setup(){
 	MAP_GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P1 , GPIO_PIN5 | GPIO_PIN6 | GPIO_PIN7,
 			GPIO_PRIMARY_MODULE_FUNCTION );
 
-	//selecting gpio pin for CS
-	//MAP_GPIO_setAsOutputPin(GPIO_PORT_P5, GPIO_PIN2);//set direction
-	//MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P5, GPIO_PIN2); //set high to turn off
-
 	//configuring SPI for 3wire master mode
 	MAP_SPI_initMaster(EUSCI_B0_MODULE,&spiMasterConfig);//EUSCI_B0_MODULE = Base address of module registers
 	MAP_SPI_enableModule(EUSCI_B0_MODULE);
+    Interrupt_enableInterrupt(INT_EUSCIB0);
+    Interrupt_enableSleepOnIsrExit();
 
    /* Delaying waiting for the module to initialize */
-    uint8_t i;
-    for(i=0; i<100;i++);
+    __delay_cycles(500);
 
 }
 
@@ -170,14 +166,14 @@ void read_message(){
 	}
 	uint8_t it = 0;
 	for(it=0;it<3;++it){
-		SPI_receiveData(EUSCI_B0_MODULE); //read status byte
+		SPI_receiveData(EUSCI_B0_MODULE); //read status byte and throw away
 	}
 	for(iterator = 0;iterator < bit_stream_length;++iterator){
 
 			for(iter = 0; iter<delay ;++iter){}// delay for 4 cycles
 			container[iterator%3] = SPI_receiveData(EUSCI_B0_MODULE); //read a byte
 			if(iterator%3 == 2){
-				sample[spi_index]= twos_to_signed (container[0],container[1],container[2]);
+				sample[spi_index]= twos_to_signed (container[0],container[1],container[2]);// convert twos complement and store in buffer
 				printf(EUSCI_A0_MODULE, "value: %i \r\n", sample[spi_index]);
 			}
 	}
@@ -189,20 +185,106 @@ void read_message(){
 }
 
 void spi_start(){
-    uint8_t start_byte = 0x08;
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x06); //RESET
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x06); //RESET
+	__delay_cycles(100000); //Wait 150ms
 
-    /* Polling to see if the TX buffer is ready */
-    while (!(SPI_getInterruptStatus(EUSCI_B0_MODULE,EUSCI_B_SPI_TRANSMIT_INTERRUPT)));
-    /* Transmitting data to slave */
-    SPI_transmitData(EUSCI_B0_MODULE, start_byte);
+	// Power Up sequencing - Single ended Input
+	SPI_transmitData(EUSCI_B0_MODULE, 0x11); //SDATAC
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x43); //CONFIG3 address
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Write to 1 register
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x6C); //Register data
+	__delay_cycles(960);
+	__delay_cycles(100000);
 
+	SPI_transmitData(EUSCI_B0_MODULE, 0x41); //CONFIG1 address
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x00);// Write to 1 register
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x96); //Register data - 500Hz data rate
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+
+	SPI_transmitData(EUSCI_B0_MODULE, 0x42); //CONFIG2 address
+//	 __delay_cycles(960);
+	 __delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Write to 1 register
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0xC0); //Register data
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+
+	SPI_transmitData(EUSCI_B0_MODULE, 0x45); //CH1SET address
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x07); //Write to 8 registers
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Register data - normal electrode
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Register data
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Register data
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Register data
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Register data
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Register data
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Register data
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Register data
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+
+	SPI_transmitData(EUSCI_B0_MODULE, 0x55); //MISC1 address is 15h
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Write to 1 register
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE, 0x20); //Register data - Set SRB1
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE,0x44); //LOFF address
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	SPI_transmitData(EUSCI_B0_MODULE,0x00); //Write to 1 register
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+
+	SPI_transmitData(EUSCI_B0_MODULE,0x06); //Register data - 24nA, 31.2Hz
+//	__delay_cycles(960);
+	__delay_cycles(10000); //Wait 150ms
+	__delay_cycles(1920);
+	SPI_transmitData(EUSCI_B0_MODULE, 0x08); //START
+//	__delay_cycles(960);
+	__delay_cycles(10000);
+	SPI_transmitData(EUSCI_B0_MODULE, 0x10); // read data cont
+	__delay_cycles(10000);
 }
 
 //-----------------------------------------------Drdy
 void drdy_setup(){
-    /* Configuring P1.0 as output and P1.1 (switch) as input */
-    //MAP_GPIO_setAsOutputPin(GPIO_PORT_P3, GPIO_PIN0);
-
     /* Configuring P3.5 as an input and enabling interrupts */
     MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P3, GPIO_PIN5);
     MAP_GPIO_clearInterruptFlag(GPIO_PORT_P3, GPIO_PIN5);
@@ -242,11 +324,6 @@ void uart_setup(){
 
     /* Enable UART module */
     MAP_UART_enableModule(EUSCI_A0_MODULE);
-    /* Enabling interrupts */
-  //  MAP_UART_enableInterrupt(EUSCI_A0_MODULE, EUSCI_A_UART_RECEIVE_INTERRUPT);
-  //  MAP_Interrupt_enableInterrupt(INT_EUSCIA0);
-    //MAP_UART_transmitData(EUSCI_A0_MODULE, Data);
-    //Data = MAP_UART_receiveData(EUSCI_A0_MODULE);
     MAP_Interrupt_enableMaster();
 }
 
@@ -254,52 +331,14 @@ void uart_setup(){
 volatile int css = 0;
 void main(void)
 {
-	//void Interrupt_setPriority(uint32_t interruptNumber, uint8_t priority);
 	MAP_WDT_A_holdTimer();
-	/* Enabling SRAM Bank Retention */
-	//MAP_SysCtl_enableSRAMBankRetention(SYSCTL_SRAM_BANK1);
+	drdy_setup();
+	adc();
+	uart_setup();
+	encoderInit();
 	spi_setup();
-//	drdy_setup();
-	//adc();
-	//uart_setup();
-	int i;
-
-	unsigned int cycle = (msp_clk_rate/ads_clk_rate)+1; // cycle ratio needed for delays between reading bytes
-	unsigned int delay = 4*cycle;
-	unsigned int iterator = 0;
-	unsigned int iter = 0;
-
-
-	SPI_transmitData(EUSCI_B0_MODULE, 0x02);//wake up
-	SPI_transmitData(EUSCI_B0_MODULE, 0x02);
-	SPI_transmitData(EUSCI_B0_MODULE, 0x02);
-	SPI_transmitData(EUSCI_B0_MODULE, 0x02);
-	SPI_transmitData(EUSCI_B0_MODULE, 0x02);
-	SPI_transmitData(EUSCI_B0_MODULE, 0x08);
-	//for(iter = 0; iter<delay ;++iter){}// delay for 4 cycles
-	//uint8_t start_byte = 0x08;
-  //  SPI_transmitData(EUSCI_B0_MODULE, 0x08);
-    while(1){
-
-    	SPI_transmitData(EUSCI_B0_MODULE, 0x00);
-    	/*if(CS_getSMCLK()){
-    	MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P5, GPIO_PIN2); //set high to turn off
-    	}
-    	else{
-    		MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P5, GPIO_PIN2); //set high to turn off
-    	}*/
-    	//spi_start();
-    	//MAP_PCM_gotoLPM3();
-    	//_delayCycles
-
-    	//SPI_transmitData(EUSCI_B0_MODULE, start_byte);
-    	//for(i = 0 ;i <100; ++i){
-    	//}
-    	css = SPI_receiveData(EUSCI_B0_MODULE);
-
-    	//start_byte = 0x00;
-    	//printf(EUSCI_A0_MODULE, "hi: %i \r\n",CS_getACLK());
-    }
+	spi_start();
+    while(1){}
 }
 
 //-----------------------------------------------Interrupts
@@ -323,21 +362,32 @@ void adc_isr(void)
         MAP_ADC14_getMultiSequenceResult(resultsBuffer);
         a = resultsBuffer[0];
         b = resultsBuffer[1];
+        printf(EUSCI_A0_MODULE,"result1: %i result1: %i",a,b );
     }
-
 }
+
 
 void gpio_isr4(void)
 {
+	uint8_t val[3];
+	val[0] = GPIO_getInputPinValue(GPIO_PORT_P4,GPIO_PIN0);
+	val[1] = GPIO_getInputPinValue(GPIO_PORT_P4,GPIO_PIN1);
+	val[2] = GPIO_getInputPinValue(GPIO_PORT_P4,GPIO_PIN2);
     uint32_t status;
 
     status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P4);
     MAP_GPIO_clearInterruptFlag(GPIO_PORT_P4, status);
 
-	if(status & GPIO_PIN0){ //one step CCW
-		stepCCW(); //call function for step CCW
-	}else{ //one step CW
-		stepCW(); //call function for step CW
+  //  printf(EUSCI_A0_MODULE,"gpio1 %i", GPIO_getInputPinValue(GPIO_PORT_P4,GPIO_PIN0));
+
+    printf(EUSCI_A0_MODULE,"\r\n\r\n");
+    if(val[0]==val[1]==val[2] ){ //one step CW
+		printf(EUSCI_A0_MODULE,"in neg\r\n");
+		raw_position++;
+	}else{ //one step CCW
+		printf(EUSCI_A0_MODULE,"in pos\r\n");
+		//temp_pos++;
+		raw_position--;
 	}
 
 }
@@ -359,24 +409,4 @@ void gpio_isr3(void)
 
 }
 
-/* EUSCI A0 UART ISR - Echos data back to PC host */
-void euscia0_isr(void)
-{
-  /*  uint32_t status = MAP_UART_getEnabledInterruptStatus(EUSCI_A0_MODULE);
 
-    MAP_UART_clearInterruptFlag(EUSCI_A0_MODULE, status);
-
-    if(status & EUSCI_A_UART_RECEIVE_INTERRUPT)
-    {
-        RXData = MAP_UART_receiveData(EUSCI_A0_MODULE);
-
-        if(RXData != TXData)              // Check value
-        {
-            MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
-            while(1);                       // Trap CPU
-        }
-        TXData++;
-        MAP_Interrupt_disableSleepOnIsrExit();
-    }*/
-
-}
