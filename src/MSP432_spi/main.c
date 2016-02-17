@@ -238,6 +238,4 @@ void gpio_isr3(void)
      //   MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
     //    read_message();
     }
-
 }
-
