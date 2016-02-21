@@ -5,10 +5,11 @@
  *      Author: rafael
 ***************************************************************************************/
 //1.1,1.2,1.3,1.5,1.6,1.7
+//2.4,2.5
 //3.5
-//4.0,4.1,4.2,
-//5.4,5.5
-
+//4.0,4.1,4.2,4.5,4.6
+//5.0,5.1,5.4,5.5
+//7.5,7.7
 #include <driverlib.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -17,42 +18,20 @@
 #include "RadialEncoder.h"
 #include <string.h>
 #include "SPI_COMMS.h"
+#include "drv8.h"
+
 //-----------------------------------------------Variables
 
 uint8_t Drdy = 0x00; //Flag for SPI
 uint8_t sample_rdy=0x00; //Flag when window amount of samples read.
 uint8_t spi_data[50][24];
-
-
 volatile uint16_t x = 0;
-
 volatile int32_t raw_position = 0;
 volatile int32_t pos_pulse_count = 0;
 volatile int32_t neg_pulse_count = 0;
-
 static uint16_t resultsBuffer[2];// used for ADC
 volatile uint16_t a,b =0; //used for adc testing
-//-----------------------------------------------Filtering
-
-/*void conditionSamples(){
-	uint8_t i = 0;
-	for(i = 0; i < window;++i){
-		samples[i] = _Q1abs(samples[i]);//rectify
-		//moving average
-		sum = sum + samples[i];
-		if(i>window){
-			sum = sum - samples[i-window];
-			filtered[i] = sum/window;
-		}
-		else if(i = window){
-			filtered[i] = sum/window;
-		}
-		else{
-			filtered[i] = 0;
-		}
-		MAP_UART_transmitData(EUSCI_A0_MODULE, filtered[i]);
-	}
-}*/
+bool fault= true;
 //-----------------------------------------------ADC
 
 void adc(){
@@ -99,13 +78,11 @@ void adc(){
 
 }
 
-
-
 //-----------------------------------------------Uart
 void uart_setup(){
 	const eUSCI_UART_Config uartConfig =
 	{
-	        EUSCI_A_UART_CLOCKSOURCE_ACLK,          // SMCLK Clock Source
+	        EUSCI_A_UART_CLOCKSOURCE_SMCLK,          // SMCLK Clock Source
 	        26,                                     // BRDIV = 26
 	        0,                                       // UCxBRF = 0
 	        111,                                       // UCxBRS = 111
@@ -137,26 +114,27 @@ void main(void)
 
 {
 	MAP_WDT_A_holdTimer();
-	drdy_setup();
+	//drdy_setup();
 	//adc();
-//	uart_setup();
+	uart_setup();
 	//encoderInit();
 	spi_setup();
 	spi_start();
 
 	// READ DATA BY COMMAND
 	SPI_transmitData(EUSCI_B0_MODULE, 0x12); // RDATAC
-	__delay_cycles(500000);
+	__delay_cycles(5000);
 
-	SPI_transmitData(EUSCI_B0_MODULE, 0x00); //dummy
-	x = SPI_receiveData(EUSCI_B0_MODULE);
+	// READ DATA CONTINUOUSLY
+	SPI_transmitData(EUSCI_B0_MODULE, 0x10); // RDATAC
+	__delay_cycles(5000);
 
 
     while(1){
-
-    	//SPI_transmitData(EUSCI_B0_MODULE, 0x00); //dummy
-    	//x = SPI_receiveData(EUSCI_B0_MODULE);
-
+    	SPI_transmitData(EUSCI_B0_MODULE, 0x00); //dummy
+    	x = SPI_receiveData(EUSCI_B0_MODULE);
+    	__delay_cycles(1000);
+    	//printf(EUSCI_A0_MODULE,"hello\n");
 
     	// WHEN DRDY TRANSITIONS
     /*
@@ -178,12 +156,7 @@ void main(void)
 
     }
 }
-
 //-----------------------------------------------Interrupts
-
-/* This interrupt is fired whenever a conversion is completed and placed in
- * ADC_MEM1. This signals the end of conversion and the results array is
- * grabbed and placed in resultsBuffer */
 
 void adc_isr(void)
 {
@@ -237,5 +210,18 @@ void gpio_isr3(void)
     //	Drdy = 0x01;
      //   MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
     //    read_message();
+    }
+}
+
+void gpio_isr5(void)
+{
+    uint32_t status;
+    status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P5);
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P5, status);
+
+
+    if(status & GPIO_PIN0)
+    {
+    	fault = MAP_GPIO_getInputPinValue(GPIO_PORT_P5,GPIO_PIN0);
     }
 }
