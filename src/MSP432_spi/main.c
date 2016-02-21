@@ -18,6 +18,7 @@
 #include "RadialEncoder.h"
 #include <string.h>
 #include "SPI_COMMS.h"
+#include "UART_COMMS.h"
 #include "drv8.h"
 
 //-----------------------------------------------Variables
@@ -26,12 +27,9 @@ uint8_t Drdy = 0x00; //Flag for SPI
 uint8_t sample_rdy=0x00; //Flag when window amount of samples read.
 uint8_t spi_data[50][24];
 volatile uint16_t x = 0;
-volatile int32_t raw_position = 0;
-volatile int32_t pos_pulse_count = 0;
-volatile int32_t neg_pulse_count = 0;
+
 static uint16_t resultsBuffer[2];// used for ADC
 volatile uint16_t a,b =0; //used for adc testing
-bool fault= true;
 //-----------------------------------------------ADC
 
 void adc(){
@@ -76,38 +74,6 @@ void adc(){
     MAP_ADC14_enableConversion();
     MAP_ADC14_toggleConversionTrigger();
 
-}
-
-//-----------------------------------------------Uart
-void uart_setup(){
-	const eUSCI_UART_Config uartConfig =
-	{
-	        EUSCI_A_UART_CLOCKSOURCE_SMCLK,          // SMCLK Clock Source
-	        26,                                     // BRDIV = 26
-	        0,                                       // UCxBRF = 0
-	        111,                                       // UCxBRS = 111
-	        EUSCI_A_UART_NO_PARITY,                  // No Parity
-	        EUSCI_A_UART_LSB_FIRST,                  // LSB First
-	        EUSCI_A_UART_ONE_STOP_BIT,               // One stop bit
-	        EUSCI_A_UART_MODE,                       // UART mode
-	        EUSCI_A_UART_OVERSAMPLING_BAUDRATE_GENERATION  // Oversampling
-	};
-
-    /* Selecting P1.2 and P1.3 in UART mode and P1.0 as output (LED) */
-    MAP_GPIO_setAsPeripheralModuleFunctionInputPin(GPIO_PORT_P1,GPIO_PIN1 | GPIO_PIN2 | GPIO_PIN3, GPIO_PRIMARY_MODULE_FUNCTION);
-    //MAP_GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
-    //MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
-
-    /* Setting DCO to 48MHz (upping Vcore) */
-    MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
-    CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
-    //CS_setExternalClockSourceFrequency
-    /* Configuring UART Module */
-    MAP_UART_initModule(EUSCI_A0_MODULE, &uartConfig);
-
-    /* Enable UART module */
-    MAP_UART_enableModule(EUSCI_A0_MODULE);
-    MAP_Interrupt_enableMaster();
 }
 
 void main(void)
@@ -177,51 +143,3 @@ void adc_isr(void)
     }
 }
 
-void gpio_isr4(void)
-{
-//	uint32_t status;
-	uint8_t val[3];
-	val[0] = GPIO_getInputPinValue(GPIO_PORT_P4,GPIO_PIN0);
-	val[1] = GPIO_getInputPinValue(GPIO_PORT_P4,GPIO_PIN1);
-	val[2] = GPIO_getInputPinValue(GPIO_PORT_P4,GPIO_PIN2);
-
-//    status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P4);
-//    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P4, status);
-    printf(EUSCI_A0_MODULE,"\r\n\r\n");
-    if(val[0]==val[1]==val[2] ){ //one step CW
-		printf(EUSCI_A0_MODULE,"in neg\r\n");
-		raw_position++;
-	}else{ //one step CCW
-		printf(EUSCI_A0_MODULE,"in pos\r\n");
-		raw_position--;
-	}
-}
-
-void gpio_isr3(void)
-{
-    uint32_t status;
-
-    status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P3);
-    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P3, status);
-
-    /* set Drdy Flag*/
-    if(status & GPIO_PIN5)
-    {
-    //	Drdy = 0x01;
-     //   MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
-    //    read_message();
-    }
-}
-
-void gpio_isr5(void)
-{
-    uint32_t status;
-    status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P5);
-    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P5, status);
-
-
-    if(status & GPIO_PIN0)
-    {
-    	fault = MAP_GPIO_getInputPinValue(GPIO_PORT_P5,GPIO_PIN0);
-    }
-}

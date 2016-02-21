@@ -9,7 +9,7 @@
 
 void intiallize(){
 	MAP_WDT_A_holdTimer();
-
+	fault = false;
 
 	// initialize pins
 	//pwm pins
@@ -36,14 +36,14 @@ void setup_PWM(){
     pwmConfig0.timerPeriod = 32000;
     pwmConfig0.compareRegister = TIMER_A_CAPTURECOMPARE_REGISTER_0;
     pwmConfig0.compareOutputMode = TIMER_A_OUTPUTMODE_TOGGLE;
-    pwmConfig0.dutyCycle = 3200;
+    pwmConfig0.dutyCycle = PWM1;
 
     pwmConfig1.clockSource = TIMER_A_CLOCKSOURCE_SMCLK;
     pwmConfig1.clockSourceDivider = TIMER_A_CLOCKSOURCE_DIVIDER_1;
     pwmConfig1.timerPeriod = 32000;
     pwmConfig1.compareRegister = TIMER_A_CAPTURECOMPARE_REGISTER_0;
     pwmConfig1.compareOutputMode = TIMER_A_OUTPUTMODE_TOGGLE;
-    pwmConfig1.dutyCycle = 3200;
+    pwmConfig1.dutyCycle = PWM2;
     MAP_Timer_A_generatePWM(TIMER_A0_MODULE, &pwmConfig0);
     MAP_Timer_A_generatePWM(TIMER_A1_MODULE, &pwmConfig1);
 }
@@ -90,3 +90,17 @@ void drive_stop(){
 	 MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P7, GPIO_PIN5|GPIO_PIN7);
 }
 
+//----------------------interrupts----------------------------------------------------------------------
+
+void gpio_isr5(void)//fault
+{
+    uint32_t status;
+    status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P5);
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P5, status);
+
+
+    if(status & GPIO_PIN0)
+    {
+    	fault = MAP_GPIO_getInputPinValue(GPIO_PORT_P5,GPIO_PIN0);
+    }
+}

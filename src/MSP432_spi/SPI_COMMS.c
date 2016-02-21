@@ -67,11 +67,11 @@ void spi_setup(){
 	};
 	MAP_SPI_initMaster(EUSCI_B0_MODULE,&spiMasterConfig);//EUSCI_B0_MODULE = Base address of module registers
 	MAP_SPI_enableModule(EUSCI_B0_MODULE);
-    Interrupt_enableInterrupt(INT_EUSCIB0);
-    Interrupt_enableSleepOnIsrExit();
+	MAP_Interrupt_enableInterrupt(INT_EUSCIB0);
+	MAP_Interrupt_enableSleepOnIsrExit();
 
    /* Delaying waiting for the module to initialize */
-    __delay_cycles(500);
+	__delay_cycles(500);
 
 }
 
@@ -143,7 +143,7 @@ void spi_start(int32_t sample[50]){
 	__delay_cycles(5000); //Wait 150ms
 
 	// RESET
-	SPI_transmitData(EUSCI_B0_MODULE, 0x06); //RESET 0000 0110
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x06); //RESET 0000 0110
 	__delay_cycles(5000); //Wait 150ms
 
 	// WRITE REGISTERS
@@ -153,7 +153,7 @@ void spi_start(int32_t sample[50]){
 	spi_read_registers();
 
 	// START COMMAND
-	SPI_transmitData(EUSCI_B0_MODULE, 0x08); //START
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x08); //START
 	__delay_cycles(5000);
 
 	// READ DATA CONTINUOUSLY
@@ -479,5 +479,24 @@ void drdy_setup(){
 
     /* Enabling MASTER interrupts */
     MAP_Interrupt_enableMaster();
+}
+
+
+//----------------------interrupts----------------------------------------------------------------------
+
+void gpio_isr3(void)//drdy intrpt
+{
+    uint32_t status;
+
+    status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P3);
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P3, status);
+
+    /* set Drdy Flag*/
+    if(status & GPIO_PIN5)
+    {
+    //	Drdy = 0x01;
+     //   MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+    //    read_message();
+    }
 }
 

@@ -47,6 +47,7 @@ static void defaultISR(void);
 /* processor is started                                                     */
 extern void _c_int00(void);
 extern void adc_isr(void);
+extern void gpio_isr5(void);
 extern void gpio_isr4(void);
 extern void gpio_isr3(void);
 
@@ -122,7 +123,7 @@ void (* const interruptVectors[])(void) =
     defaultISR,                             /* PORT2 ISR                 */
     gpio_isr3,                             /* PORT3 ISR                 */
     gpio_isr4,                             /* PORT4 ISR                 */
-    defaultISR,                             /* PORT5 ISR                 */
+	gpio_isr5,                             /* PORT5 ISR                 */
     defaultISR,                             /* PORT6 ISR                 */
     defaultISR,                             /* Reserved 41               */
     defaultISR,                             /* Reserved 42               */
