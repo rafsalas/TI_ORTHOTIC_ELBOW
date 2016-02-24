@@ -77,34 +77,40 @@ void adc(){
 }
 
 void main(void)
-
 {
 	MAP_WDT_A_holdTimer();
 	//drdy_setup();
 	//adc();
-	uart_setup();
+	//uart_setup();
 	//encoderInit();
 	spi_setup();
-	spi_start();
+	//spi_start();
 
 	// READ DATA BY COMMAND
-	SPI_transmitData(EUSCI_B0_MODULE, 0x12); // RDATAC
+/*	SPI_transmitData(EUSCI_B0_MODULE, 0x12); // RDATAC
 	__delay_cycles(5000);
 
 	// READ DATA CONTINUOUSLY
 	SPI_transmitData(EUSCI_B0_MODULE, 0x10); // RDATAC
 	__delay_cycles(5000);
+*/
+	//MAP_CS_initClockSignal(CS_SMCLK , CS_DCOCLK_SELECT , CS_CLOCK_DIVIDER_1);// clock source CS_ACLK, Use external clock, no clock divisions
 
+	intiallize();
+    //setup_PWM();
+    drive_forward();
+    //drive_reverse();
 
     while(1){
-    	SPI_transmitData(EUSCI_B0_MODULE, 0x00); //dummy
-    	x = SPI_receiveData(EUSCI_B0_MODULE);
-    	__delay_cycles(1000);
-    	//printf(EUSCI_A0_MODULE,"hello\n");
 
+    x = CS_getSMCLK();
+    //	SPI_transmitData(EUSCI_B0_MODULE, 0x00); //dummy
+    //	x = SPI_receiveData(EUSCI_B0_MODULE);
+    	//__delay_cycles(1000000);
+    //	printf(EUSCI_A0_MODULE,"hello\n");
+    	//drive_stop();
     	// WHEN DRDY TRANSITIONS
     /*
-
     SPI_transmitData(__MSP430_BASEADDRESS_USCI_B1__, 0x12); //RDATA
     __delay_cycles(100)
 

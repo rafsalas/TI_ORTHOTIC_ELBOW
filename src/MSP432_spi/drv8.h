@@ -10,11 +10,14 @@
 #include <driverlib.h>
 
 
-#define PWM1 16000
-#define PWM2 16000
+#define PWM1 500
+#define PWM2 500
+#define CLK_PERIOD 500
 
 Timer_A_PWMConfig pwmConfig0;
 Timer_A_PWMConfig pwmConfig1;
+Timer_A_PWMConfig pwmConfig2;
+Timer_A_PWMConfig pwmConfig3;
 bool fault;
 
 
