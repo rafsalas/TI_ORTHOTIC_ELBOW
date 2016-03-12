@@ -102,6 +102,7 @@ void main(void)
     //drive_reverse();
 
     while(1){
+    	//hi pens
 
     x = CS_getSMCLK();
     //	SPI_transmitData(EUSCI_B0_MODULE, 0x00); //dummy
