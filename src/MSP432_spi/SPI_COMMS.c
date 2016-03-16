@@ -33,6 +33,13 @@ volatile uint16_t GPIO_reg = 0;
 volatile uint16_t MISC1_reg = 0;
 volatile uint16_t MISC2_reg = 0;
 
+volatile uint8_t SPI_Raw_Data[54];
+volatile uint16_t DATA = 0;
+
+
+int32_t SPI_Data_Window[50][8];
+
+
 //-------------------------------------------------------
 void spi_setup(){
 /* SPI Master Configuration Parameter */
@@ -96,8 +103,31 @@ void conditionSamples(int32_t samples [50], uint32_t filtered[50]){
 }
 
 int32_t twos_to_signed (uint32_t msb, uint32_t mid, uint32_t lsb){
-	uint32_t num = (msb<<24)|(mid<<16)|(lsb<<8);// concatonate bytes
-    int32_t num2;
+//	uint32_t num = (msb<<24)|(mid<<16)|(lsb<<8);// concatonate bytes
+
+	// Cast Inputs as 8 Bit Unsigned Integer
+	msb = msb & 0xFF;
+	mid = mid & 0xFF;
+	lsb = lsb & 0xFF;
+
+	uint32_t num = (msb<<16)|(mid<<8)|(lsb);  // Concatenate Bytes
+
+	int32_t num2;
+
+	num = num&(0x0FFF); // Cast num as 24 Bit Integer
+
+	if((num>>23)%2==1)
+	{
+		num2=(1<<24)-num;
+		num2=-num2;
+	}
+	else
+	{
+		num2=num;
+	}
+
+
+	/*
     if(((int)num)<0){
             num2=-((~num)+1); //2's complement
     }
@@ -105,6 +135,7 @@ int32_t twos_to_signed (uint32_t msb, uint32_t mid, uint32_t lsb){
             num2 = num;
     }
     num2 = num2>>2; //shift to correct for 2 bit offset needed for 2's complement
+    */
     return num2;
 }
 
@@ -163,6 +194,10 @@ void spi_start(int32_t sample[50]){
 	// READ DATA BY COMMAND
 	//SPI_transmitData(EUSCI_B0_MODULE, 0x12); // RDATAC
 	//__delay_cycles(5000);
+
+
+	// COMPLETE FLAG
+	SPI_Connected=0x01; //Flag for SPI Initialize Complete
 }
 
 void spi_register_setting(){
@@ -487,16 +522,74 @@ void drdy_setup(){
 void gpio_isr3(void)//drdy intrpt
 {
     uint32_t status;
-
     status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P3);
+
+    // DRDY Toggle
+    //if(Drdy==0x01) Drdy=0x00;
+    //else Drdy=0x01;
+
+    //Drdy=Drdy+1;
+
+
+    if(SPI_Connected && SPI_Cleared)//&& Drdy==0x01)
+    {
+       	SPI_Cleared=0;
+       	SPI_Collect_Data();
+       	SPI_Cleared=1;
+    }
+
+
+
+
     MAP_GPIO_clearInterruptFlag(GPIO_PORT_P3, status);
 
     /* set Drdy Flag*/
     if(status & GPIO_PIN5)
     {
-    //	Drdy = 0x01;
+    	//Drdy = Drdy+1;
+    	//	Drdy = 0x01;
      //   MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
     //    read_message();
     }
+}
+
+void SPI_Collect_Data(void)
+{
+	unsigned int cycle = (msp_clk_rate/ads_clk_rate)+1; // cycle ratio needed for delays between reading bytes
+
+	if(spi_index == window){//condition sample and reset  spi_index
+		conditionSamples(sample , filtered);
+		spi_index = 0;
+	}
+
+
+	// READ DATA BY COMMAND
+	SPI_transmitData(EUSCI_B0_MODULE, 0x12); // RDATAC
+	__delay_cycles(100);
+
+	// PROMPT DATA STREAM
+	// Issue 24 + CHANNELS*24 SCLK Signals (216 Clock Signals)
+	int i;
+	for(i=0;i<(NUM_CHANNELS+1)*3;i++)
+	{
+    	SPI_transmitData(EUSCI_B0_MODULE, 0x00); // DUMMY Data Signal; 8 SCLK Signals
+    	__delay_cycles(10); // Read Delay
+    	SPI_Raw_Data[i] = SPI_receiveData(EUSCI_B0_MODULE);
+	}
+
+	for(i=0;i<NUM_CHANNELS;i++) // Iterate over (8) Channels
+	{
+		// 3 (8 Bit Status Signal) + i * 3 (8 Bit Channel Signals)
+		SPI_Data_Window[spi_index][i]=twos_to_signed(SPI_Raw_Data[3+i*3],SPI_Raw_Data[3+i*3+1],SPI_Raw_Data[3+i*3+2]);
+	}
+
+	sample[spi_index]=SPI_Data_Window[spi_index][0];
+
+
+
+
+	//Drdy = 0x01;
+	spi_index++; //increment first dimension of spi_data index
+
 }
 

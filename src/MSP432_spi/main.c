@@ -24,8 +24,14 @@
 //-----------------------------------------------Variables
 
 uint8_t Drdy = 0x00; //Flag for SPI
+uint8_t SPI_Cleared = 1; // Flag to Wait Until Channel Clears
+uint8_t SPI_Connected = 0x00; //Flag for SPI Initialize Complete
 uint8_t sample_rdy=0x00; //Flag when window amount of samples read.
 uint8_t spi_data[50][24];
+int32_t sample[50];
+uint32_t filtered[50];
+
+
 volatile uint16_t x = 0;
 
 static uint16_t resultsBuffer[2];// used for ADC
@@ -79,51 +85,34 @@ void adc(){
 void main(void)
 {
 	MAP_WDT_A_holdTimer();
-	//drdy_setup();
+	drdy_setup();
 	//adc();
 	//uart_setup();
 	//encoderInit();
 	spi_setup();
-	//spi_start();
+	spi_start();
 
-	// READ DATA BY COMMAND
-/*	SPI_transmitData(EUSCI_B0_MODULE, 0x12); // RDATAC
-	__delay_cycles(5000);
-
-	// READ DATA CONTINUOUSLY
-	SPI_transmitData(EUSCI_B0_MODULE, 0x10); // RDATAC
-	__delay_cycles(5000);
-*/
 	//MAP_CS_initClockSignal(CS_SMCLK , CS_DCOCLK_SELECT , CS_CLOCK_DIVIDER_1);// clock source CS_ACLK, Use external clock, no clock divisions
 
-	intiallize();
+	//intiallize();
     //setup_PWM();
-    drive_forward();
+    //drive_forward();
     //drive_reverse();
 
     while(1){
 
-    x = CS_getSMCLK();
-    //	SPI_transmitData(EUSCI_B0_MODULE, 0x00); //dummy
-    //	x = SPI_receiveData(EUSCI_B0_MODULE);
-    	//__delay_cycles(1000000);
-    //	printf(EUSCI_A0_MODULE,"hello\n");
-    	//drive_stop();
-    	// WHEN DRDY TRANSITIONS
-    /*
-    SPI_transmitData(__MSP430_BASEADDRESS_USCI_B1__, 0x12); //RDATA
-    __delay_cycles(100)
+    //x = CS_getSMCLK();
 
-    int j;
-    for(j=0; j<(NUM_CHANNELS * 3 + NUM_BOARDS*3); j++)
-    {
-        SPI_transmitData(__MSP430_BASEADDRESS_USCI_B1__, 0x00); //Dummy data
-        __delay_cycles(100);
-        spiData[j] = SPI_receiveData(__MSP430_BASEADDRESS_USCI_B1__);
-        if((j < 3) || ((j > 26) && (j <= 29))); // Skip status bytes of the 2 ADS1299 data
-        else sendDataByte(spiData[j]);
-    }
-    */
+
+    	/*
+    	if(Drdy>0)
+    	{
+    		SPI_Collect_Data();
+    		Drdy=Drdy-1;
+        	__delay_cycles(10000); // Read Delay
+
+    	}
+		*/
 
 
     }
