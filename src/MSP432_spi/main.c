@@ -100,6 +100,7 @@ void main(void)
     //drive_reverse();
 
     while(1){
+    	//hi pens
 
     //x = CS_getSMCLK();
 
