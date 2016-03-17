@@ -33,19 +33,70 @@ volatile uint16_t GPIO_reg = 0;
 volatile uint16_t MISC1_reg = 0;
 volatile uint16_t MISC2_reg = 0;
 
-volatile uint8_t SPI_Raw_Data[54];
-volatile uint16_t DATA = 0;
+// SPI DATA
+uint8_t SPI_Raw_Data[54]; // 54 Packets * 8 Bits per Packet = 216 Bits
+int32_t SPI_Data[8]; // 8 Channels (Unconditioned, 2's Complemented)
+
+// EMG DATA
+uint32_t EMG_i; // EMG Sample Number
+
+// HIGH PASS FILTER
+const int N_FIR_HP = 51; // Order of High Pass Filter
+double Buffer_HP[8][51]; // Buffer for High Pass Filter
+const double h_HP[51] = { // Filter Coefficients for High Pass Filter
+   0.001199133912997,-0.002440111986486,-0.002035725104674, -0.00139925064403,
+  0.0001070335519827, 0.002366069954306, 0.004596957382711, 0.005632855909442,
+   0.004418459381303, 0.000573592710898,-0.005169814894392, -0.01091049180765,
+   -0.01404581533516, -0.01219369321007,-0.004294831557407, 0.008507173118647,
+    0.02261686565702,   0.0326106842957,  0.03266738121427,  0.01843638662614,
+   -0.01124611203015, -0.05341045838623,  -0.1011975637409,  -0.1453328673629,
+    -0.1764660756429,   0.8123093725108,  -0.1764660756429,  -0.1453328673629,
+    -0.1011975637409, -0.05341045838623, -0.01124611203015,  0.01843638662614,
+    0.03266738121427,   0.0326106842957,  0.02261686565702, 0.008507173118647,
+  -0.004294831557407, -0.01219369321007, -0.01404581533516, -0.01091049180765,
+  -0.005169814894392, 0.000573592710898, 0.004418459381303, 0.005632855909442,
+   0.004596957382711, 0.002366069954306,0.0001070335519827, -0.00139925064403,
+  -0.002035725104674,-0.002440111986486, 0.001199133912997
+};
 
 
-int32_t SPI_Data_Window[50][8];
+// BAND STOP FILTER
+const int N_FIR_BS = 51; // Order of Band Stop Filter
+double Buffer_BS[8][51]; // Buffer for Band Stop Filter
+const double h_BS[51] = { // Filter Coefficients for Band Stop Filter
+    0.01170915995068,4.568526127283e-05,-0.0009865874736183,-1.592672624989e-05,
+  -0.001858304770361,-0.001315562519492, 0.006345768096185,  0.00431105416751,
+   -0.01246776230191, -0.01002577553774,  0.01899605772893,  0.01837114053531,
+    -0.0252761001099, -0.02961353939938,  0.02968670237753,  0.04266565383013,
+   -0.03159577923216, -0.05677064733728,  0.02985485986251,  0.06996876714235,
+   -0.02471776736712, -0.08108181425934,   0.0162002470427,  0.08824264510038,
+  -0.005727847424186,   0.9091097201922,-0.005727847424186,  0.08824264510038,
+     0.0162002470427, -0.08108181425934, -0.02471776736712,  0.06996876714235,
+    0.02985485986251, -0.05677064733728, -0.03159577923216,  0.04266565383013,
+    0.02968670237753, -0.02961353939938,  -0.0252761001099,  0.01837114053531,
+    0.01899605772893, -0.01002577553774, -0.01246776230191,  0.00431105416751,
+   0.006345768096185,-0.001315562519492,-0.001858304770361,-1.592672624989e-05,
+  -0.0009865874736183,4.568526127283e-05,  0.01170915995068
+};
 
+
+// MOVING AVERAGE FILTER
+const int N_AVG = 51; // Number of Samples for Moving Average
+double Buffer_AVG[8][51]; // Buffer for Moving Average
+
+
+// NORMALIZATION ROUTINE
+double EMG_max[8]; // Maximum EMG Signal
+double EMG_min[8]; // Minimum EMG Signal
+double EMG_min_i[8]; // Minimum EMG Signal Index
 
 //-------------------------------------------------------
 void spi_setup(){
 /* SPI Master Configuration Parameter */
 	msp_clk_rate = 48000;//48Mhz
 	ads_clk_rate = 2048; //2.048 MHz
-	spi_index = 0;
+
+	EMG_i = 0;
 	Drdy = 0x00;
     /* Starting and enabling LFXT (32kHz) */
 	//MAP_GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_PJ, GPIO_PIN0 | GPIO_PIN1, GPIO_PRIMARY_MODULE_FUNCTION);
@@ -82,92 +133,25 @@ void spi_setup(){
 
 }
 
-void conditionSamples(int32_t samples [50], uint32_t filtered[50]){
-	uint8_t i = 0;
-	for(i = 0; i < window;++i){
-		samples[i] = _Q1abs(samples[i]);//rectify
-		//moving average
-		sum = sum + samples[i];
-		if(i>window){
-			sum = sum - samples[i-window];
-			filtered[i] = sum/window;
-		}
-		else if(i == window){
-			filtered[i] = sum/window;
-		}
-		else{
-			filtered[i] = 0;
-		}
-		MAP_UART_transmitData(EUSCI_A0_MODULE, filtered[i]);
-	}
-}
+
 
 int32_t twos_to_signed (uint32_t msb, uint32_t mid, uint32_t lsb){
-//	uint32_t num = (msb<<24)|(mid<<16)|(lsb<<8);// concatonate bytes
 
 	// Cast Inputs as 8 Bit Unsigned Integer
-	msb = msb & 0xFF;
-	mid = mid & 0xFF;
-	lsb = lsb & 0xFF;
+	msb = msb & 0xFF; mid = mid & 0xFF; lsb = lsb & 0xFF;
 
-	uint32_t num = (msb<<16)|(mid<<8)|(lsb);  // Concatenate Bytes
+	uint32_t num = (msb<<16)|(mid<<8)|(lsb); 	// Concatenate Bytes
 
-	int32_t num2;
+	int32_t num2; 	// Signed Result
 
-	num = num&(0x0FFF); // Cast num as 24 Bit Integer
+	num = num&(0x0FFF); // Cast Number as 24 Bit Integer
 
-	if((num>>23)%2==1)
-	{
-		num2=(1<<24)-num;
-		num2=-num2;
-	}
-	else
-	{
-		num2=num;
-	}
+	if((num>>23)%2==1) num2=-((1<<24)-num); // If 24th Bit is a 1, then use 2's Complement
+	else num2=num; // Otherwise, no need for 2's complement
 
-
-	/*
-    if(((int)num)<0){
-            num2=-((~num)+1); //2's complement
-    }
-    else{
-            num2 = num;
-    }
-    num2 = num2>>2; //shift to correct for 2 bit offset needed for 2's complement
-    */
     return num2;
 }
 
-void read_message(int32_t sample[50], uint32_t filtered[50]){
-	unsigned int cycle = (msp_clk_rate/ads_clk_rate)+1; // cycle ratio needed for delays between reading bytes
-	unsigned int delay = 4*cycle;
-	unsigned int iterator = 0;
-	unsigned int iter = 0;
-	uint32_t container[3];
-
-	if(spi_index == window){//condition sample and reset  spi_index
-		conditionSamples(sample , filtered);
-		spi_index = 0;
-	}
-	uint8_t it = 0;
-	for(it=0;it<3;++it){
-		SPI_receiveData(EUSCI_B0_MODULE); //read status byte and throw away
-	}
-	for(iterator = 0;iterator < 24;++iterator){//24 bytes
-			for(iter = 0; iter<delay ;++iter){}// delay for 4 cycles
-			container[iterator%3] = SPI_receiveData(EUSCI_B0_MODULE); //read a byte
-			if(iterator%3 == 2){
-				sample[spi_index]= twos_to_signed (container[0],container[1],container[2]);// convert twos complement and store in buffer
-				printf(EUSCI_A0_MODULE, "value: %i \r\n", sample[spi_index]);
-			}
-	}
-	/*if(spi_index==49){
-		sample_rdy = 0x01;
-	}*/
-	Drdy = 0x01;
-	spi_index++; //increment first dimension of spi_data index
-}
 
 void spi_start(int32_t sample[50]){
 
@@ -555,13 +539,6 @@ void gpio_isr3(void)//drdy intrpt
 
 void SPI_Collect_Data(void)
 {
-	unsigned int cycle = (msp_clk_rate/ads_clk_rate)+1; // cycle ratio needed for delays between reading bytes
-
-	if(spi_index == window){//condition sample and reset  spi_index
-		conditionSamples(sample , filtered);
-		spi_index = 0;
-	}
-
 
 	// READ DATA BY COMMAND
 	SPI_transmitData(EUSCI_B0_MODULE, 0x12); // RDATAC
@@ -569,7 +546,7 @@ void SPI_Collect_Data(void)
 
 	// PROMPT DATA STREAM
 	// Issue 24 + CHANNELS*24 SCLK Signals (216 Clock Signals)
-	int i;
+	int i,j;
 	for(i=0;i<(NUM_CHANNELS+1)*3;i++)
 	{
     	SPI_transmitData(EUSCI_B0_MODULE, 0x00); // DUMMY Data Signal; 8 SCLK Signals
@@ -577,19 +554,119 @@ void SPI_Collect_Data(void)
     	SPI_Raw_Data[i] = SPI_receiveData(EUSCI_B0_MODULE);
 	}
 
+	// CONDITION DATA
 	for(i=0;i<NUM_CHANNELS;i++) // Iterate over (8) Channels
 	{
+		// Concatenate and 2's Complement
 		// 3 (8 Bit Status Signal) + i * 3 (8 Bit Channel Signals)
-		SPI_Data_Window[spi_index][i]=twos_to_signed(SPI_Raw_Data[3+i*3],SPI_Raw_Data[3+i*3+1],SPI_Raw_Data[3+i*3+2]);
+		SPI_Data[i] = twos_to_signed( SPI_Raw_Data[3+i*3],SPI_Raw_Data[3+i*3+1],SPI_Raw_Data[3+i*3+2]);
+
+		// Filter, Average, Normalize
+		EMG[i][0]=High_Pass(     i,(double)SPI_Data[i], N_FIR_HP); // High Pass Filter, High Pass Overhead
+		EMG[i][0]=Band_Stop(     i,          EMG[i][0], N_FIR_HP + N_FIR_BS ); // Band Stop Filter, High Pass + Band Stop Overhead
+		EMG[i][0]=Moving_Average(i,          EMG[i][0], N_FIR_HP + N_FIR_BS + N_AVG); // Moving Average, High Pass + Band Stop + Moving Average Overhead
+		EMG[i][0]=Normalize(     i,EMG[i][0],EMG[i][1], N_FIR_HP + N_FIR_BS + N_AVG); // Normalize, High Pass + Band Stop + Moving Average Overhead
+
+
+		// EMG History Buffer
+		for(j=EMG_History-1;j>0;j--)
+		{
+			EMG[i][j]=EMG[i][j-1];
+		}
+
+
+		MAP_UART_transmitData(EUSCI_A0_MODULE, EMG[i][0]);
+
+
 	}
+	EMG_i = EMG_i + 1; // Increment EMG Data Sample Number
 
-	sample[spi_index]=SPI_Data_Window[spi_index][0];
-
-
-
-
-	//Drdy = 0x01;
-	spi_index++; //increment first dimension of spi_data index
 
 }
 
+double High_Pass(int channel, double data_in, int overhead)
+{
+	int i;
+	double data_out = 0;
+
+	Buffer_HP[channel][0] = data_in;
+
+	for(i=0;i<N_FIR_HP;i++)
+	{
+		data_out = data_out + Buffer_HP[channel][i]*h_HP[i];
+	}
+
+	for(i=N_FIR_HP-1;i>0;i--)
+	{
+		Buffer_HP[channel][i] = Buffer_HP[channel][i-1];
+	}
+
+	if(EMG_i>overhead) return data_out;
+	else return 0;
+}
+
+double Band_Stop(int channel, double data_in, int overhead)
+{
+	int i;
+	double data_out = 0;
+
+	Buffer_BS[channel][0] = data_in;
+
+	for(i=0;i<N_FIR_BS;i++)
+	{
+		data_out = data_out + Buffer_BS[channel][i]*h_BS[i];
+	}
+
+	for(i=N_FIR_BS-1;i>0;i--)
+	{
+		Buffer_BS[channel][i] = Buffer_BS[channel][i-1];
+	}
+
+	if(EMG_i>overhead) return data_out;
+	else return 0;
+}
+
+double Moving_Average(int channel, double data_in, int overhead)
+{
+	int i;
+	double data_out = 0;
+
+	Buffer_AVG[channel][0] = data_in;
+
+	for(i=0;i<N_AVG;i++)
+	{
+		data_out = data_out + _Q1abs(Buffer_AVG[channel][i]);
+	}
+
+	for(i=N_AVG-1;i>0;i--)
+	{
+		Buffer_AVG[channel][i] = Buffer_AVG[channel][i-1];
+	}
+
+	if(EMG_i>overhead) return data_out/N_AVG;
+	else return 0;
+}
+
+double Normalize(int channel, double data_in, double data_in_old, int overhead)
+{
+
+	if(EMG_i>overhead)
+	{
+		// Store Maximum EMG Value
+		if(data_in>EMG_max[channel]) EMG_max[channel] = data_in;
+
+		// Store Minimum EMG Value
+		if(data_in_old<0.1 && EMG_min_i[channel]==1 && EMG_i>overhead+N_AVG)
+		{
+			EMG_min_i[channel]=EMG_i;
+			EMG_min[channel]=data_in;
+		}
+		if(EMG_i>EMG_min_i[channel] && data_in<EMG_min[channel]) EMG_min[channel] = data_in;
+
+		return (data_in-EMG_min[channel])/(EMG_max[channel]-EMG_min[channel]);
+	}
+	else
+	{
+		return data_in;
+	}
+}

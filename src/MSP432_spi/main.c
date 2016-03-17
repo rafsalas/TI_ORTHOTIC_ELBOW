@@ -23,14 +23,20 @@
 
 //-----------------------------------------------Variables
 
-uint8_t Drdy = 0x00; //Flag for SPI
-uint8_t SPI_Cleared = 1; // Flag to Wait Until Channel Clears
-uint8_t SPI_Connected = 0x00; //Flag for SPI Initialize Complete
-uint8_t sample_rdy=0x00; //Flag when window amount of samples read.
-uint8_t spi_data[50][24];
-int32_t sample[50];
-uint32_t filtered[50];
+///////////////////////////
+// BODY-TO-SENSOR INTERFACE
+///////////////////////////
+// SPI
+uint8_t Drdy = 0x00; //Flag for DRDY on SPI Channel
+uint8_t SPI_Cleared = 1; // Flag to Wait Until SPI Channel Clears
+uint8_t SPI_Connected = 0; // Flag to Wait Until SPI Initialiation Complete
 
+// EMG
+double EMG[8][50]; // 8 Channel History (Filtered, Rectified, Averaged)
+
+//////
+// END
+//////
 
 volatile uint16_t x = 0;
 
