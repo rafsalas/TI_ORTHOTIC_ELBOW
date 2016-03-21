@@ -42,6 +42,8 @@ volatile uint16_t x = 0;
 
 static uint16_t resultsBuffer[2];// used for ADC
 volatile uint16_t a,b =0; //used for adc testing
+
+volatile uint32_t timer_test = 0;
 //-----------------------------------------------ADC
 
 void adc(){
@@ -98,7 +100,7 @@ void main(void)
 	spi_setup();
 	spi_start();
 
-	//MAP_CS_initClockSignal(CS_SMCLK , CS_DCOCLK_SELECT , CS_CLOCK_DIVIDER_1);// clock source CS_ACLK, Use external clock, no clock divisions
+	CS_initClockSignal(CS_SMCLK , CS_DCOCLK_SELECT , CS_CLOCK_DIVIDER_1);// clock source CS_ACLK, Use external clock, no clock divisions
 
 	//intiallize();
     //setup_PWM();
@@ -106,6 +108,12 @@ void main(void)
     //drive_reverse();
 
     while(1){
+    	__delay_cycles(100000); // Read Delay
+
+    	timer_test=timer_test+1;
+    	SPI_Collect_Data();
+    	timer_test=timer_test+1;
+
     	//hi pens
 
     //x = CS_getSMCLK();

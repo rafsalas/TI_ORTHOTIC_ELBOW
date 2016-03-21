@@ -33,12 +33,19 @@ volatile uint16_t GPIO_reg = 0;
 volatile uint16_t MISC1_reg = 0;
 volatile uint16_t MISC2_reg = 0;
 
+volatile double HP_Data[8][50] = {0};
+volatile double BS_Data[8][50] = {0};
+volatile double AVG_Data[8][50] = {0};
+volatile double Check_Data = 0;
+
 // SPI DATA
 uint8_t SPI_Raw_Data[54]; // 54 Packets * 8 Bits per Packet = 216 Bits
-int32_t SPI_Data[8]; // 8 Channels (Unconditioned, 2's Complemented)
+double SPI_Data[8]; // 8 Channels (Unconditioned, 2's Complemented)
 
 // EMG DATA
 uint32_t EMG_i; // EMG Sample Number
+
+const double ADS1299_Resolution = 0x1000000; // 24-Bit Resolution
 
 // HIGH PASS FILTER
 const int N_FIR_HP = 51; // Order of High Pass Filter
@@ -87,8 +94,8 @@ double Buffer_AVG[8][51]; // Buffer for Moving Average
 
 // NORMALIZATION ROUTINE
 double EMG_max[8]; // Maximum EMG Signal
-double EMG_min[8]; // Minimum EMG Signal
-double EMG_min_i[8]; // Minimum EMG Signal Index
+double EMG_min[8];// = {100, 100, 100, 100, 100, 100, 100, 100}; // Minimum EMG Signal
+double EMG_min_i[8];// = {51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51}; // Minimum EMG Signal Index
 
 //-------------------------------------------------------
 void spi_setup(){
@@ -144,7 +151,7 @@ int32_t twos_to_signed (uint32_t msb, uint32_t mid, uint32_t lsb){
 
 	int32_t num2; 	// Signed Result
 
-	num = num&(0x0FFF); // Cast Number as 24 Bit Integer
+	num = num&(0xFFFFFF); // Cast Number as 24 Bit Integer
 
 	if((num>>23)%2==1) num2=-((1<<24)-num); // If 24th Bit is a 1, then use 2's Complement
 	else num2=num; // Otherwise, no need for 2's complement
@@ -518,7 +525,7 @@ void gpio_isr3(void)//drdy intrpt
     if(SPI_Connected && SPI_Cleared)//&& Drdy==0x01)
     {
        	SPI_Cleared=0;
-       	SPI_Collect_Data();
+       	//SPI_Collect_Data();
        	SPI_Cleared=1;
     }
 
@@ -550,7 +557,7 @@ void SPI_Collect_Data(void)
 	for(i=0;i<(NUM_CHANNELS+1)*3;i++)
 	{
     	SPI_transmitData(EUSCI_B0_MODULE, 0x00); // DUMMY Data Signal; 8 SCLK Signals
-    	__delay_cycles(10); // Read Delay
+    	__delay_cycles(100); // Read Delay
     	SPI_Raw_Data[i] = SPI_receiveData(EUSCI_B0_MODULE);
 	}
 
@@ -560,19 +567,25 @@ void SPI_Collect_Data(void)
 		// Concatenate and 2's Complement
 		// 3 (8 Bit Status Signal) + i * 3 (8 Bit Channel Signals)
 		SPI_Data[i] = twos_to_signed( SPI_Raw_Data[3+i*3],SPI_Raw_Data[3+i*3+1],SPI_Raw_Data[3+i*3+2]);
-
-		// Filter, Average, Normalize
-		EMG[i][0]=High_Pass(     i,(double)SPI_Data[i], N_FIR_HP); // High Pass Filter, High Pass Overhead
-		EMG[i][0]=Band_Stop(     i,          EMG[i][0], N_FIR_HP + N_FIR_BS ); // Band Stop Filter, High Pass + Band Stop Overhead
-		EMG[i][0]=Moving_Average(i,          EMG[i][0], N_FIR_HP + N_FIR_BS + N_AVG); // Moving Average, High Pass + Band Stop + Moving Average Overhead
-		EMG[i][0]=Normalize(     i,EMG[i][0],EMG[i][1], N_FIR_HP + N_FIR_BS + N_AVG); // Normalize, High Pass + Band Stop + Moving Average Overhead
-
+		SPI_Data[i] = SPI_Data[i]/ADS1299_Resolution;
 
 		// EMG History Buffer
 		for(j=EMG_History-1;j>0;j--)
 		{
+			HP_Data[i][j]=HP_Data[i][j-1];
+			BS_Data[i][j]=BS_Data[i][j-1];
+			AVG_Data[i][j]=AVG_Data[i][j-1];
 			EMG[i][j]=EMG[i][j-1];
 		}
+		
+		// Filter, Average, Normalize
+		HP_Data[i][0]  =High_Pass(     i,          (double)SPI_Data[i],N_FIR_HP); // High Pass Filter, High Pass Overhead
+		BS_Data[i][0]  =Band_Stop(     i,                HP_Data[i][0],N_FIR_HP + N_FIR_BS ); // Band Stop Filter, High Pass + Band Stop Overhead
+		//Check_Data     =Error_Check(   i,BS_Data[i][0], AVG_Data[i][0],N_FIR_HP + N_FIR_BS + N_AVG);
+		//AVG_Data[i][0] =Moving_Average(i,                   Check_Data,N_FIR_HP + N_FIR_BS + N_AVG); // Moving Average, High Pass + Band Stop + Moving Average Overhead
+		AVG_Data[i][0] =Moving_Average(i,                BS_Data[i][0],N_FIR_HP + N_FIR_BS + N_AVG); // Moving Average, High Pass + Band Stop + Moving Average Overhead
+		EMG[i][0]      =Normalize(     i,AVG_Data[i][0],AVG_Data[i][1],N_FIR_HP + N_FIR_BS + N_AVG); // Normalize, High Pass + Band Stop + Moving Average Overhead
+
 
 
 		MAP_UART_transmitData(EUSCI_A0_MODULE, EMG[i][0]);
@@ -580,87 +593,102 @@ void SPI_Collect_Data(void)
 
 	}
 	EMG_i = EMG_i + 1; // Increment EMG Data Sample Number
+	__delay_cycles(100); // Read Delay
 
 
 }
 
-double High_Pass(int channel, double data_in, int overhead)
+double High_Pass(int channel, double data_in, uint32_t overhead)
 {
-	int i;
+	uint32_t i;
 	double data_out = 0;
 
-	Buffer_HP[channel][0] = data_in;
-
-	for(i=0;i<N_FIR_HP;i++)
-	{
-		data_out = data_out + Buffer_HP[channel][i]*h_HP[i];
-	}
-
+	// Shift History Buffer Back
 	for(i=N_FIR_HP-1;i>0;i--)
 	{
 		Buffer_HP[channel][i] = Buffer_HP[channel][i-1];
 	}
 
+	// Add New Sample
+	Buffer_HP[channel][0] = data_in;
+
+	// Filter
+	for(i=0;i<N_FIR_HP;i++)
+	{
+		data_out = data_out + Buffer_HP[channel][i]*h_HP[i];
+	}
+
 	if(EMG_i>overhead) return data_out;
 	else return 0;
 }
 
-double Band_Stop(int channel, double data_in, int overhead)
+double Band_Stop(int channel, double data_in, uint32_t overhead)
 {
-	int i;
+	uint32_t i;
 	double data_out = 0;
 
-	Buffer_BS[channel][0] = data_in;
-
-	for(i=0;i<N_FIR_BS;i++)
-	{
-		data_out = data_out + Buffer_BS[channel][i]*h_BS[i];
-	}
-
+	// Shift History Buffer Back
 	for(i=N_FIR_BS-1;i>0;i--)
 	{
 		Buffer_BS[channel][i] = Buffer_BS[channel][i-1];
 	}
 
+	// Add New Sample
+	Buffer_BS[channel][0] = data_in;
+
+	// Filter
+	for(i=0;i<N_FIR_BS;i++)
+	{
+		data_out = data_out + Buffer_BS[channel][i]*h_BS[i];
+	}
+
+
+
 	if(EMG_i>overhead) return data_out;
 	else return 0;
 }
 
-double Moving_Average(int channel, double data_in, int overhead)
+double Moving_Average(int channel, double data_in, uint32_t overhead)
 {
-	int i;
+	uint32_t i;
 	double data_out = 0;
 
-	Buffer_AVG[channel][0] = data_in;
-
-	for(i=0;i<N_AVG;i++)
-	{
-		data_out = data_out + _Q1abs(Buffer_AVG[channel][i]);
-	}
-
+	// Shift History Buffer Back
 	for(i=N_AVG-1;i>0;i--)
 	{
 		Buffer_AVG[channel][i] = Buffer_AVG[channel][i-1];
 	}
 
+	// Add New Sample
+	Buffer_AVG[channel][0] = data_in;
+
+	// Filter
+	for(i=0;i<N_AVG;i++)
+	{
+		data_out = data_out + _Q1abs(Buffer_AVG[channel][i]);
+	}
+
+
+
 	if(EMG_i>overhead) return data_out/N_AVG;
 	else return 0;
 }
 
-double Normalize(int channel, double data_in, double data_in_old, int overhead)
+double Normalize(int channel, double data_in, double data_in_old, uint32_t overhead)
 {
 
 	if(EMG_i>overhead)
 	{
-		// Store Maximum EMG Value
+		// Store Maximum EMG Value (Dynamic)
 		if(data_in>EMG_max[channel]) EMG_max[channel] = data_in;
 
-		// Store Minimum EMG Value
-		if(data_in_old<0.1 && EMG_min_i[channel]==1 && EMG_i>overhead+N_AVG)
+		// Store Initial Minimum EMG Value (Once)
+		if(data_in_old<0.1 && EMG_min_i[channel]==0 && EMG_i>overhead+N_AVG)
 		{
 			EMG_min_i[channel]=EMG_i;
 			EMG_min[channel]=data_in;
 		}
+		// Store Minimum EMG Value (Dynamic)
 		if(EMG_i>EMG_min_i[channel] && data_in<EMG_min[channel]) EMG_min[channel] = data_in;
 
 		return (data_in-EMG_min[channel])/(EMG_max[channel]-EMG_min[channel]);
@@ -669,4 +697,14 @@ double Normalize(int channel, double data_in, double data_in_old, int overhead)
 	{
 		return data_in;
 	}
+}
+
+double Error_Check(int channel, double input, double average, uint32_t overhead)
+{
+	if(EMG_i>overhead)
+	{
+		if(_Q1abs(input)>10*average || _Q1abs(input)<0.1*average) return average;
+		else return input;
+	}
+	else return input;
 }
