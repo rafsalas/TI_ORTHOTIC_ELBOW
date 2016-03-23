@@ -579,12 +579,19 @@ void SPI_Collect_Data(void)
 		}
 		
 		// Filter, Average, Normalize
-		HP_Data[i][0]  =High_Pass(     i,          (double)SPI_Data[i],N_FIR_HP); // High Pass Filter, High Pass Overhead
-		BS_Data[i][0]  =Band_Stop(     i,                HP_Data[i][0],N_FIR_HP + N_FIR_BS ); // Band Stop Filter, High Pass + Band Stop Overhead
+		//HP_Data[i][0]  =High_Pass(     i,          (double)SPI_Data[i],N_FIR_HP); // High Pass Filter, High Pass Overhead
+		//BS_Data[i][0]  =Band_Stop(     i,                HP_Data[i][0],N_FIR_HP + N_FIR_BS ); // Band Stop Filter, High Pass + Band Stop Overhead
+
+
 		//Check_Data     =Error_Check(   i,BS_Data[i][0], AVG_Data[i][0],N_FIR_HP + N_FIR_BS + N_AVG);
 		//AVG_Data[i][0] =Moving_Average(i,                   Check_Data,N_FIR_HP + N_FIR_BS + N_AVG); // Moving Average, High Pass + Band Stop + Moving Average Overhead
-		AVG_Data[i][0] =Moving_Average(i,                BS_Data[i][0],N_FIR_HP + N_FIR_BS + N_AVG); // Moving Average, High Pass + Band Stop + Moving Average Overhead
-		EMG[i][0]      =Normalize(     i,AVG_Data[i][0],AVG_Data[i][1],N_FIR_HP + N_FIR_BS + N_AVG); // Normalize, High Pass + Band Stop + Moving Average Overhead
+
+
+		//AVG_Data[i][0] =Moving_Average(i,                BS_Data[i][0],N_FIR_HP + N_FIR_BS + N_AVG); // Moving Average, High Pass + Band Stop + Moving Average Overhead
+
+		//EMG[i][0]      =Normalize(     i,AVG_Data[i][0],AVG_Data[i][1],N_FIR_HP + N_FIR_BS + N_AVG); // Normalize, High Pass + Band Stop + Moving Average Overhead
+
+		EMG[i][0] = SPI_Data[0];
 
 
 
