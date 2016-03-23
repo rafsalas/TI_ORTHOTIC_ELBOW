@@ -94,14 +94,16 @@ void timersetup(){
 
 	const Timer_A_ContinuousModeConfig continuousModeConfig =
 	{
-	        TIMER_A_CLOCKSOURCE_ACLK,           // ACLK Clock Source
+	        TIMER_A_CLOCKSOURCE_SMCLK,           // ACLK Clock Source
 	        TIMER_A_CLOCKSOURCE_DIVIDER_1,      // ACLK/1 = 3M
 	        TIMER_A_TAIE_INTERRUPT_ENABLE,      // Enable Overflow ISR
 	        TIMER_A_DO_CLEAR                    // Clear Counter
 	};
+
     /* Configuring P1.0 as output */
     MAP_GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
     MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
+
     /* Starting and enabling ACLK (32kHz) */
     MAP_CS_setReferenceOscillatorFrequency(CS_REFO_32KHZ);
     MAP_CS_initClockSignal(CS_ACLK, CS_REFOCLK_SELECT, CS_CLOCK_DIVIDER_128);
@@ -114,18 +116,17 @@ void timersetup(){
     MAP_Interrupt_enableMaster();
     /* Starting the Timer_A0 in continuous mode */
     MAP_Timer_A_startCounter(TIMER_A3_MODULE, TIMER_A_CONTINUOUS_MODE);
-
 }
 
 volatile uint32_t clk = 0;
 volatile uint32_t aux = 0;
-
+volatile uint32_t counter = 0;
 void main(void)
 {
 	MAP_WDT_A_holdTimer();
 	drdy_setup();
 	//adc();
-	//uart_setup();
+	uart_setup();
 	//encoderInit();
 	spi_setup();
 	spi_start();
@@ -135,13 +136,18 @@ void main(void)
     //drive_forward();
     //drive_reverse();
 
+	printf(EUSCI_A0_MODULE,"hi1");
     while(1){
-    	clk = CS_getMCLK();
-    	aux = CS_getACLK();
-    	__delay_cycles(100000); // Read Delay
-
+    	//clk = CS_getMCLK();
+    	//aux = CS_getSMCLK();
+    	//__delay_cycles(100000); // Read Delay
+    	printf(EUSCI_A0_MODULE,"hi2");
     	//timer_test=timer_test+1;
+    	clk = counter;
     	SPI_Collect_Data();
+    	aux = counter;
+    	printf(EUSCI_A0_MODULE,"hi3");
+    	//__delay_cycles(100000);
     	//timer_test=timer_test+1;
     	//hi pens
     //x = CS_getSMCLK();
@@ -179,12 +185,16 @@ void adc_isr(void)
     }
 }
 
-void proccess_interrupt(void)
+void proccess_interupt(void)
 {//1E-6 secs, 1mghz
  //.004, 250hz
  //4000 cycles
-    MAP_Timer_A_clearInterruptFlag(TIMER_A3_MODULE);
-    MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+	counter = counter +1;
+	if (counter > 4000000){
+		counter = 0;
+	}
+    //MAP_Timer_A_clearInterruptFlag(TIMER_A3_MODULE);
+   // MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
 }
 
 

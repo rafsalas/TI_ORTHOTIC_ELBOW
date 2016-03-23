@@ -50,7 +50,7 @@ extern void adc_isr(void);
 extern void gpio_isr5(void);
 extern void gpio_isr4(void);
 extern void gpio_isr3(void);
-extern void proccess_interrupt(void);
+extern void proccess_interupt(void);
 
 /* Linker variable that marks the top of the stack. */
 extern unsigned long __STACK_END;
@@ -99,7 +99,7 @@ void (* const interruptVectors[])(void) =
     defaultISR,                             /* TA2_0 ISR                 */
     defaultISR,                             /* TA2_N ISR                 */
     defaultISR,                             /* TA3_0 ISR                 */
-	proccess_interrupt,                             /* TA3_N ISR                 */
+	proccess_interupt,                             /* TA3_N ISR                 */
 	defaultISR,                             /* EUSCIA0 ISR               */
     defaultISR,                             /* EUSCIA1 ISR               */
     defaultISR,                             /* EUSCIA2 ISR               */
