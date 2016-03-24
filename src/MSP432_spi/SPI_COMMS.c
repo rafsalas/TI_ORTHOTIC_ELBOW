@@ -140,6 +140,7 @@ void spi_start(int32_t sample[50]){
 
 	// WRITE REGISTERS
 	spi_write_registers();
+	spi_write_registers();
 
 	// READ REGISTERS
 	spi_read_registers();
