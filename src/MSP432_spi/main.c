@@ -90,6 +90,38 @@ void adc(){
 
 }
 
+void timersetup(){
+
+	const Timer_A_ContinuousModeConfig continuousModeConfig =
+	{
+	        TIMER_A_CLOCKSOURCE_ACLK,           // ACLK Clock Source
+	        TIMER_A_CLOCKSOURCE_DIVIDER_1,      // ACLK/4 = 250
+	        TIMER_A_TAIE_INTERRUPT_ENABLE,      // Enable Overflow ISR
+	        TIMER_A_DO_CLEAR                    // Clear Counter
+	};
+
+    /* Configuring P1.0 as output */
+    MAP_GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
+    MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
+
+    /* Starting and enabling ACLK (32kHz) */
+    MAP_CS_setReferenceOscillatorFrequency(CS_REFO_128KHZ);
+    MAP_CS_initClockSignal(CS_ACLK, CS_REFOCLK_SELECT, CS_CLOCK_DIVIDER_4);
+    /* Configuring Continuous Mode */
+    MAP_Timer_A_configureContinuousMode(TIMER_A3_MODULE, &continuousModeConfig);
+    /* Enabling interrupts and going to sleep */
+    MAP_Interrupt_enableSleepOnIsrExit();
+    MAP_Interrupt_enableInterrupt(INT_TA3_N);
+    /* Enabling MASTER interrupts */
+    MAP_Interrupt_enableMaster();
+    /* Starting the Timer_A0 in continuous mode */
+    MAP_Timer_A_startCounter(TIMER_A3_MODULE, TIMER_A_CONTINUOUS_MODE);
+}
+
+volatile uint32_t clk = 0;
+volatile uint32_t aux = 0;
+volatile uint32_t counter = 0;
+
 void main(void)
 {
 	MAP_WDT_A_holdTimer();
@@ -99,26 +131,27 @@ void main(void)
 	//encoderInit();
 	spi_setup();
 	spi_start();
-
-	CS_initClockSignal(CS_SMCLK , CS_DCOCLK_SELECT , CS_CLOCK_DIVIDER_1);// clock source CS_ACLK, Use external clock, no clock divisions
-
+	timersetup();
 	//intiallize();
     //setup_PWM();
     //drive_forward();
     //drive_reverse();
 
     while(1){
-    	__delay_cycles(100000); // Read Delay
-
-    	timer_test=timer_test+1;
+    	//clk = CS_getMCLK();
+    	clk = CS_getACLK();
+    	__delay_cycles(1000000); // Read Delay
+    	//timer_test = 0;
+    	//timer_test=timer_test+1;
+    	aux=Timer_A_getCounterValue(TIMER_A3_MODULE);
+    	//clk = counter;
     	SPI_Collect_Data();
-    	timer_test=timer_test+1;
-
+    	//aux = counter;
+    	timer_test=Timer_A_getCounterValue(TIMER_A3_MODULE)- aux;
+    	//__delay_cycles(100000);
+    	//timer_test=timer_test+1;
     	//hi pens
-
     //x = CS_getSMCLK();
-
-
     	/*
     	if(Drdy>0)
     	{
@@ -152,4 +185,19 @@ void adc_isr(void)
         printf(EUSCI_A0_MODULE,"result1: %i result1: %i",a,b );
     }
 }
+
+void proccess_interupt(void)
+{//1E-6 secs, 1mghz
+ //.004, 250hz
+ //4000 cycles
+	counter = counter +1;
+	if (counter > 4000000){
+		counter = 0;
+	}
+    MAP_Timer_A_clearInterruptFlag(TIMER_A3_MODULE);
+   MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+}
+
+
+
 
