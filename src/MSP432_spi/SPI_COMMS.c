@@ -41,55 +41,25 @@ volatile double Check_Data = 0;
 // SPI DATA
 uint8_t SPI_Raw_Data[54]; // 54 Packets * 8 Bits per Packet = 216 Bits
 double SPI_Data[8]; // 8 Channels (Unconditioned, 2's Complemented)
+double SPI_Data_Window[8][100]; // 8 Channels, 100 Sample Window
+uint8_t DRDY; // DRDY Control for SPI Data Stream Prompt
 
 // EMG DATA
 uint32_t EMG_i; // EMG Sample Number
-
+double EMG_Voltage_Window[100]; // Raw Data / ADC Resolution
 const double ADS1299_Resolution = 0x1000000; // 24-Bit Resolution
 
+
+// DSP PARAMETERS
+const int N_WIN = 100; // Window Size
+
 // HIGH PASS FILTER
-const int N_FIR_HP = 51; // Order of High Pass Filter
-double Buffer_HP[8][51]; // Buffer for High Pass Filter
-const double h_HP[51] = { // Filter Coefficients for High Pass Filter
-   0.001199133912997,-0.002440111986486,-0.002035725104674, -0.00139925064403,
-  0.0001070335519827, 0.002366069954306, 0.004596957382711, 0.005632855909442,
-   0.004418459381303, 0.000573592710898,-0.005169814894392, -0.01091049180765,
-   -0.01404581533516, -0.01219369321007,-0.004294831557407, 0.008507173118647,
-    0.02261686565702,   0.0326106842957,  0.03266738121427,  0.01843638662614,
-   -0.01124611203015, -0.05341045838623,  -0.1011975637409,  -0.1453328673629,
-    -0.1764660756429,   0.8123093725108,  -0.1764660756429,  -0.1453328673629,
-    -0.1011975637409, -0.05341045838623, -0.01124611203015,  0.01843638662614,
-    0.03266738121427,   0.0326106842957,  0.02261686565702, 0.008507173118647,
-  -0.004294831557407, -0.01219369321007, -0.01404581533516, -0.01091049180765,
-  -0.005169814894392, 0.000573592710898, 0.004418459381303, 0.005632855909442,
-   0.004596957382711, 0.002366069954306,0.0001070335519827, -0.00139925064403,
-  -0.002035725104674,-0.002440111986486, 0.001199133912997
+const int N_FIR_HP = 11; // Order of High Pass Filter
+double h_HP[11] = { // Filter Coefficients for High Pass Filter
+	    -0.2455987326682,  -0.2602154869553,   0.1160770995248,  -0.1397783727177,
+	    0.04711656383727,   0.8898372317322,  0.04711656383727,  -0.1397783727177,
+	     0.1160770995248,  -0.2602154869553,  -0.2455987326682
 };
-
-
-// BAND STOP FILTER
-const int N_FIR_BS = 51; // Order of Band Stop Filter
-double Buffer_BS[8][51]; // Buffer for Band Stop Filter
-const double h_BS[51] = { // Filter Coefficients for Band Stop Filter
-    0.01170915995068,4.568526127283e-05,-0.0009865874736183,-1.592672624989e-05,
-  -0.001858304770361,-0.001315562519492, 0.006345768096185,  0.00431105416751,
-   -0.01246776230191, -0.01002577553774,  0.01899605772893,  0.01837114053531,
-    -0.0252761001099, -0.02961353939938,  0.02968670237753,  0.04266565383013,
-   -0.03159577923216, -0.05677064733728,  0.02985485986251,  0.06996876714235,
-   -0.02471776736712, -0.08108181425934,   0.0162002470427,  0.08824264510038,
-  -0.005727847424186,   0.9091097201922,-0.005727847424186,  0.08824264510038,
-     0.0162002470427, -0.08108181425934, -0.02471776736712,  0.06996876714235,
-    0.02985485986251, -0.05677064733728, -0.03159577923216,  0.04266565383013,
-    0.02968670237753, -0.02961353939938,  -0.0252761001099,  0.01837114053531,
-    0.01899605772893, -0.01002577553774, -0.01246776230191,  0.00431105416751,
-   0.006345768096185,-0.001315562519492,-0.001858304770361,-1.592672624989e-05,
-  -0.0009865874736183,4.568526127283e-05,  0.01170915995068
-};
-
-
-// MOVING AVERAGE FILTER
-const int N_AVG = 51; // Number of Samples for Moving Average
-double Buffer_AVG[8][51]; // Buffer for Moving Average
 
 
 // NORMALIZATION ROUTINE
@@ -516,21 +486,7 @@ void gpio_isr3(void)//drdy intrpt
     status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P3);
 
     // DRDY Toggle
-    //if(Drdy==0x01) Drdy=0x00;
-    //else Drdy=0x01;
-
-    //Drdy=Drdy+1;
-
-
-    if(SPI_Connected && SPI_Cleared)//&& Drdy==0x01)
-    {
-       	SPI_Cleared=0;
-       	//SPI_Collect_Data();
-       	SPI_Cleared=1;
-    }
-
-
-
+    DRDY = 1;
 
     MAP_GPIO_clearInterruptFlag(GPIO_PORT_P3, status);
 
@@ -544,6 +500,111 @@ void gpio_isr3(void)//drdy intrpt
     }
 }
 
+
+void SPI_Collect_Data(void)
+{
+	int win_i,i;
+	if(SPI_Connected)
+	{
+
+		for(win_i=0;win_i<N_WIN;win_i++)
+		{
+			// DELAY IF DRDY NOT READY
+			while(DRDY==0) __delay_cycles(10);
+
+
+			// READ DATA BY COMMAND
+			SPI_transmitData(EUSCI_B0_MODULE, 0x12); // RDATAC
+			__delay_cycles(100);
+
+			// PROMPT DATA STREAM
+			// Issue 24 + CHANNELS*24 SCLK Signals (216 Clock Signals)
+			for(i=0;i<(NUM_CHANNELS+1)*3;i++)
+			{
+		    	SPI_transmitData(EUSCI_B0_MODULE, 0x00); // DUMMY Data Signal; 8 SCLK Signals
+		    	__delay_cycles(100); // Read Delay
+		    	SPI_Raw_Data[i] = SPI_receiveData(EUSCI_B0_MODULE);
+			}
+
+			// FORMAT DATA STORAGE
+			for(i=0;i<NUM_CHANNELS;i++) // Iterate over (8) Channels
+			{
+				// Concatenate and 2's Complement
+				// 3 (8 Bit Status Signal) + i * 3 (8 Bit Channel Signals)
+				SPI_Data[i] = twos_to_signed( SPI_Raw_Data[3+i*3],SPI_Raw_Data[3+i*3+1],SPI_Raw_Data[3+i*3+2]);
+				SPI_Data_Window[i][win_i]=SPI_Data[i];
+			}
+
+		}
+	}
+}
+
+void EMG_Condition_Data(void)
+{
+	int i,j;
+	double *p = malloc(N_WIN+N_FIR_HP-1);
+	double sum = 0;
+	double average;
+	// CONDITION DATA
+	for(i=0;i<NUM_CHANNELS;i++) // Iterate over (8) Channels
+	{
+		for(j=0;j<N_WIN;j++)
+		{
+			EMG_Voltage_Window[j]=SPI_Data_Window[i][j]/ADS1299_Resolution;
+		}
+
+		// Convolution
+		Convolution(N_FIR_HP,&EMG_Voltage_Window[0],N_WIN,&h_HP[0],N_FIR_HP,p);
+
+		for(j=N_FIR_HP;j<N_WIN;j++)
+		{
+			sum = sum + _Q1abs(*(p+i)); // Sum Middle of Convolution
+		}
+
+		average = sum/(N_WIN-N_FIR_HP); // Average Middle of Convolution
+
+		if(average>EMG_max[i]) EMG_max[i]=average;
+
+		if(average<EMG_min[i]) EMG_min[i]=average;
+
+		// EMG History Buffer
+		for(j=EMG_History-1;j>0;j--)
+		{
+			EMG[i][j]=EMG[i][j-1];
+		}
+
+		EMG[i][0]=(average-EMG_min[i])/(EMG_max[i]-EMG_min[i]);
+	}
+
+}
+
+void Convolution(int trim, double* a, int N_a, double* b, int N_b, double* Result)
+{
+	//Result[N_a+N_b-1];
+	uint32_t n;
+	for (n=(0)+trim;n<(N_a+N_b-1)-trim;n++)
+	{
+		uint32_t kmin, kmax, k;
+
+		*((double*)(Result+n)) = 0;
+
+		if(n>=N_b-1) kmin=n-(N_b-1);
+		else kmin=0;
+
+		if(n<N_a-1) kmax=n;
+		else kmax=N_a-1;
+
+		for(k=kmin;k<=kmax;k++)
+		{
+			*((double*)(Result+n))=*((double*)(a+n)) * (*(double*)(b+(n-k)));
+		}
+	}
+}
+
+
+
+
+/*
 void SPI_Collect_Data(void)
 {
 
@@ -708,3 +769,49 @@ double Error_Check(int channel, double input, double average, uint32_t overhead)
 	}
 	else return input;
 }
+
+// HIGH PASS FILTER
+const int N_FIR_HP = 51; // Order of High Pass Filter
+double Buffer_HP[8][51]; // Buffer for High Pass Filter
+const double h_HP[51] = { // Filter Coefficients for High Pass Filter
+   0.001199133912997,-0.002440111986486,-0.002035725104674, -0.00139925064403,
+  0.0001070335519827, 0.002366069954306, 0.004596957382711, 0.005632855909442,
+   0.004418459381303, 0.000573592710898,-0.005169814894392, -0.01091049180765,
+   -0.01404581533516, -0.01219369321007,-0.004294831557407, 0.008507173118647,
+    0.02261686565702,   0.0326106842957,  0.03266738121427,  0.01843638662614,
+   -0.01124611203015, -0.05341045838623,  -0.1011975637409,  -0.1453328673629,
+    -0.1764660756429,   0.8123093725108,  -0.1764660756429,  -0.1453328673629,
+    -0.1011975637409, -0.05341045838623, -0.01124611203015,  0.01843638662614,
+    0.03266738121427,   0.0326106842957,  0.02261686565702, 0.008507173118647,
+  -0.004294831557407, -0.01219369321007, -0.01404581533516, -0.01091049180765,
+  -0.005169814894392, 0.000573592710898, 0.004418459381303, 0.005632855909442,
+   0.004596957382711, 0.002366069954306,0.0001070335519827, -0.00139925064403,
+  -0.002035725104674,-0.002440111986486, 0.001199133912997
+};
+
+
+// BAND STOP FILTER
+const int N_FIR_BS = 51; // Order of Band Stop Filter
+double Buffer_BS[8][51]; // Buffer for Band Stop Filter
+const double h_BS[51] = { // Filter Coefficients for Band Stop Filter
+    0.01170915995068,4.568526127283e-05,-0.0009865874736183,-1.592672624989e-05,
+  -0.001858304770361,-0.001315562519492, 0.006345768096185,  0.00431105416751,
+   -0.01246776230191, -0.01002577553774,  0.01899605772893,  0.01837114053531,
+    -0.0252761001099, -0.02961353939938,  0.02968670237753,  0.04266565383013,
+   -0.03159577923216, -0.05677064733728,  0.02985485986251,  0.06996876714235,
+   -0.02471776736712, -0.08108181425934,   0.0162002470427,  0.08824264510038,
+  -0.005727847424186,   0.9091097201922,-0.005727847424186,  0.08824264510038,
+     0.0162002470427, -0.08108181425934, -0.02471776736712,  0.06996876714235,
+    0.02985485986251, -0.05677064733728, -0.03159577923216,  0.04266565383013,
+    0.02968670237753, -0.02961353939938,  -0.0252761001099,  0.01837114053531,
+    0.01899605772893, -0.01002577553774, -0.01246776230191,  0.00431105416751,
+   0.006345768096185,-0.001315562519492,-0.001858304770361,-1.592672624989e-05,
+  -0.0009865874736183,4.568526127283e-05,  0.01170915995068
+};
+
+
+// MOVING AVERAGE FILTER
+const int N_AVG = 51; // Number of Samples for Moving Average
+double Buffer_AVG[8][51]; // Buffer for Moving Average
+
+*/

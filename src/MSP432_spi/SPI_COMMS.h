@@ -16,6 +16,7 @@
 
 // USER VARIABLES
 #define NUM_CHANNELS 8 // Number of Signal Channels
+#define NUM_ACTIVE_CHANNELS 4 // Number of Active Signal Channels
 #define EMG_History 50 // EMG Data History
 
 // CLOCK RATES
@@ -48,23 +49,9 @@ void SPI_Collect_Data();
 // 2's COMPLEMENT CONVERSION
 int32_t twos_to_signed (uint32_t msb, uint32_t mid, uint32_t lsb);
 
-
-// HIGH PASS FILTER
-double High_Pass(int channel, double data_in, uint32_t overhead);
-
-// BAND STOP FILTER
-double Band_Stop(int channel, double data_in, uint32_t overhead);
-
-// Exclude Erroneous Data
-double Error_Check(int channel, double input, double average, uint32_t overhead);
-
-// MOVING AVERAGE FILTER
-double Moving_Average(int channel, double data_in, uint32_t overhead);
-
-
-// NORMALIZATION ROUTINE
-double Normalize(int channel, double data_in, double data_in_old, uint32_t overhead);
-
+// CONVOLUTION COMPUTATION
+// Trim Unstable + Irrelevant Edges
+void Convolution(int trim, double* a, int N_a, double* b, int N_b, double* p);
 
 
 
