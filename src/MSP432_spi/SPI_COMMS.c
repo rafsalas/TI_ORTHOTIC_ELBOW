@@ -42,6 +42,7 @@ volatile double Check_Data = 0;
 uint8_t SPI_Raw_Data[54]; // 54 Packets * 8 Bits per Packet = 216 Bits
 double SPI_Data[8]; // 8 Channels (Unconditioned, 2's Complemented)
 double SPI_Data_Window[8][100]; // 8 Channels, 100 Sample Window
+uint8_t SPI_Rate_Flag; // Flag for SPI Sample Rate
 uint8_t DRDY; // DRDY Control for SPI Data Stream Prompt
 
 // EMG DATA
@@ -510,6 +511,11 @@ void SPI_Collect_Data(void)
 
 		for(win_i=0;win_i<N_WIN;win_i++)
 		{
+
+			SPI_Rate_Flag=0;
+			while(SPI_Rate_Flag);
+
+
 			// DELAY IF DRDY NOT READY
 			while(DRDY==0) __delay_cycles(10);
 
@@ -602,9 +608,27 @@ void Convolution(int trim, double* a, int N_a, double* b, int N_b, double* Resul
 	}
 }
 
+/*
+void SPI_Data_Rate_ISR(void)
+{
+	// 1000 Hz Interrupt
+
+	SPI_Rate_Flag = 1;
+
+	counter = counter +1;
+	if (counter > 4000000){
+		counter = 0;
+	}
+    MAP_Timer_A_clearInterruptFlag(TIMER_A3_MODULE);
+   MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+
+
+}
+*/
 
 
 
+// Old Code
 /*
 void SPI_Collect_Data(void)
 {

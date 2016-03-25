@@ -7,7 +7,7 @@
 
 #include "drv8.h"
 
-void intiallize(){
+void setup_Motor_Driver(){
 	MAP_WDT_A_holdTimer();
 	fault = false;
 
@@ -22,6 +22,9 @@ void intiallize(){
 
     /* Enabling MASTER interrupts */
     MAP_Interrupt_enableMaster();
+
+
+    setup_PWM();
 
 }
 
