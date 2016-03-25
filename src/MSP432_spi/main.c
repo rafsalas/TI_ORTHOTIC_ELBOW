@@ -171,6 +171,24 @@ void main(void)
 
 			// Condition EMG Data
 			EMG_Condition_Data();
+
+			//Read Pot(output angle value
+
+			//Normalize pot coefficient
+
+			//direction comparator(outputs direction coefficient)
+
+			//Read FSR(get adc value)
+
+			//threshold determination
+
+			//Motor coeficient multiplication(also check calibration values here)
+
+			//actuate motor
+
+    	}
+    	else if(){
+
     	}
 
 
