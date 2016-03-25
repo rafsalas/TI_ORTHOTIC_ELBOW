@@ -165,8 +165,6 @@ void main(void)
 	// LOOP
     while(1){
 
-
-    	/*
     	// Enable SPI_Rate_Flag Interrupt
 		MAP_Interrupt_enableInterrupt(INT_TA3_N);
 		// SPI Read
@@ -176,7 +174,7 @@ void main(void)
 
 		// Condition EMG Data
 		EMG_Condition_Data();
-    	 */
+
 		//Read Pot(output angle value
 
 		//Normalize pot coefficient
