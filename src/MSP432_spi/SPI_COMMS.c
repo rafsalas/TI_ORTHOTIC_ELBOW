@@ -42,8 +42,7 @@ volatile double Check_Data = 0;
 uint8_t SPI_Raw_Data[54]; // 54 Packets * 8 Bits per Packet = 216 Bits
 double SPI_Data[8]; // 8 Channels (Unconditioned, 2's Complemented)
 double SPI_Data_Window[8][100]; // 8 Channels, 100 Sample Window
-uint8_t SPI_Rate_Flag; // Flag for SPI Sample Rate
-uint8_t DRDY; // DRDY Control for SPI Data Stream Prompt
+
 
 // EMG DATA
 uint32_t EMG_i; // EMG Sample Number
@@ -95,7 +94,7 @@ void spi_setup(){
 	{
         EUSCI_B_SPI_CLOCKSOURCE_SMCLK,              // ACLK Clock Source
 		CS_getSMCLK(),//32768,                                     // ACLK = LFXT = 32.768khz
-		1000000,//500000,                                    // SPICLK = 500khz (110k)
+		1000000,//1000000,                                    // SPICLK = 500khz (110k)
         EUSCI_B_SPI_MSB_FIRST,                     // MSB First
         EUSCI_B_SPI_PHASE_DATA_CHANGED_ONFIRST_CAPTURED_ON_NEXT,    // Phaseb
         EUSCI_B_SPI_CLOCKPOLARITY_INACTIVITY_LOW, // low polarity
@@ -480,29 +479,6 @@ void drdy_setup(){
 }
 
 
-//----------------------interrupts----------------------------------------------------------------------
-
-void gpio_isr3(void)//drdy intrpt
-{
-    uint32_t status;
-    status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P3);
-
-    // DRDY Toggle
-    DRDY = 1;
-
-    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P3, status);
-
-    /* set Drdy Flag*/
-    if(status & GPIO_PIN5)
-    {
-    	//Drdy = Drdy+1;
-    	//	Drdy = 0x01;
-     //   MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
-    //    read_message();
-    }
-}
-
-
 void SPI_Collect_Data(void)
 {
 	int win_i,i;
@@ -517,7 +493,8 @@ void SPI_Collect_Data(void)
 
 
 			// DELAY IF DRDY NOT READY
-			while(DRDY==0) __delay_cycles(10);
+			//probe drdy___________________________________________________________________________________________
+			while(Drdy==0) __delay_cycles(10);
 
 
 			// READ DATA BY COMMAND
@@ -607,6 +584,26 @@ void Convolution(int trim, double* a, int N_a, double* b, int N_b, double* Resul
 		}
 	}
 }
+
+//----------------------interrupts----------------------------------------------------------------------
+
+void gpio_isr3(void)//drdy intrpt
+{
+    uint32_t status;
+    status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P3);
+
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P3, status);
+
+    /* set Drdy Flag*/
+    if(status & GPIO_PIN5)
+    {
+    	Drdy = GPIO_getInputPinValue(GPIO_PORT_P3,GPIO_PIN5);
+    }
+}
+
+
+
+
 
 /*
 void SPI_Data_Rate_ISR(void)

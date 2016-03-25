@@ -33,6 +33,7 @@ uint8_t Main_Routine_Rate_Flag = 0x00; // Flag for Main Routine Timer
 // BODY-TO-SENSOR INTERFACE
 ///////////////////////////
 // SPI
+uint8_t SPI_Rate_Flag = 0x00; // Flag for SPI Sample Rate
 uint8_t Drdy = 0x00; //Flag for DRDY on SPI Channel
 uint8_t SPI_Cleared = 1; // Flag to Wait Until SPI Channel Clears
 uint8_t SPI_Connected = 0; // Flag to Wait Until SPI Initialiation Complete
@@ -44,6 +45,10 @@ double EMG[8][50]; // 8 Channel History (Filtered, Rectified, Averaged)
 //////
 // END
 //////
+
+
+
+
 
 volatile uint16_t x = 0;
 
@@ -102,7 +107,7 @@ void timersetup(){
 	const Timer_A_ContinuousModeConfig continuousModeConfig =
 	{
 	        TIMER_A_CLOCKSOURCE_ACLK,           // ACLK Clock Source
-	        TIMER_A_CLOCKSOURCE_DIVIDER_1,      // ACLK/4 = 250
+	        TIMER_A_CLOCKSOURCE_DIVIDER_32,      // ACLK/4 = 250
 	        TIMER_A_TAIE_INTERRUPT_ENABLE,      // Enable Overflow ISR
 	        TIMER_A_DO_CLEAR                    // Clear Counter
 	};
@@ -160,14 +165,12 @@ void main(void)
 	// LOOP
     while(1){
 
-    	if(Main_Routine_Rate_Flag)
-    	{
-    		Main_Routine_Rate_Flag = 0; // Clear Flag
-
 			// SPI Read
     		// Enable SPI_Rate_Flag Interrupt
+			MAP_Interrupt_enableInterrupt(INT_TA3_N);
 			SPI_Collect_Data();
     		// Disable SPI_Rate_Flag Interrupt
+			MAP_Interrupt_disableInterrupt(INT_TA3_N);
 
 			// Condition EMG Data
 			EMG_Condition_Data();
@@ -186,10 +189,7 @@ void main(void)
 
 			//actuate motor
 
-    	}
-    	else if(){
 
-    	}
 
 
 
@@ -238,7 +238,7 @@ void proccess_interupt(void)
  //.004, 250hz
  //4000 cycles
 
-	Main_Routine_Rate_Flag = 1;
+	SPI_Rate_Flag = 1;
 
 	counter = counter +1;
 	if (counter > 4000000){

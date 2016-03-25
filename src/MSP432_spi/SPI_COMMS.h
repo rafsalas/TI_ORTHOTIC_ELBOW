@@ -24,6 +24,7 @@ uint16_t msp_clk_rate;//48Mhz
 uint16_t ads_clk_rate;//2.048 MHz
 
 // FLAGS
+extern uint8_t SPI_Rate_Flag; // Flag for SPI Sample Rate
 extern uint8_t Drdy; //Flag for SPI
 extern uint8_t SPI_Cleared; // Flag to Wait Until Channel Clears
 extern uint8_t SPI_Connected; //Flag for SPI Initialize Complete
@@ -44,7 +45,8 @@ void drdy_setup();
 // COLLECT DATA FROM SPI CHANNEL
 void SPI_Collect_Data();
 
-
+// CONDITION DATA FROM SPI CHANNEL
+void EMG_Condition_Data();
 
 // 2's COMPLEMENT CONVERSION
 int32_t twos_to_signed (uint32_t msb, uint32_t mid, uint32_t lsb);

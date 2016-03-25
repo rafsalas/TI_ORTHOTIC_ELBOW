@@ -48,8 +48,9 @@ static void defaultISR(void);
 extern void _c_int00(void);
 extern void adc_isr(void);
 extern void gpio_isr5(void);
-extern void gpio_isr4(void);
 extern void gpio_isr3(void);
+extern void gpio_isr4(void);
+
 extern void proccess_interupt(void);
 
 /* Linker variable that marks the top of the stack. */
@@ -121,7 +122,7 @@ void (* const interruptVectors[])(void) =
     defaultISR,                             /* DMA_INT0 ISR              */
 	defaultISR,                             /* PORT1 ISR                 */
     defaultISR,                             /* PORT2 ISR                 */
-    gpio_isr3,                             /* PORT3 ISR                 */
+	gpio_isr3,                             /* PORT3 ISR                 */
     gpio_isr4,                             /* PORT4 ISR                 */
 	gpio_isr5,                             /* PORT5 ISR                 */
     defaultISR,                             /* PORT6 ISR                 */
