@@ -10,6 +10,11 @@
 //4.0,4.1,4.2,4.5,4.6
 //5.0,5.1,5.4,5.5
 //7.5,7.7
+/*
+*clock_table
+*|MCLK  |SMCLK  |ACLK  |SPICLK  |TIMER3  |
+*|3MHz  |3MHz   |32KHz |1MHz    |1000Hz  |
+*/
 #include <driverlib.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -41,22 +46,13 @@ uint8_t SPI_Connected = 0; // Flag to Wait Until SPI Initialiation Complete
 // EMG
 double EMG[8][50]; // 8 Channel History (Filtered, Rectified, Averaged)
 
-
 //////
 // END
 //////
 
-
-
-
-
-volatile uint16_t x = 0;
-
+//-----------------------------------------------ADC
 static uint16_t resultsBuffer[2];// used for ADC
 volatile uint16_t a,b =0; //used for adc testing
-
-volatile uint32_t timer_test = 0;
-//-----------------------------------------------ADC
 
 void adc(){
 
@@ -136,7 +132,6 @@ void timersetup(){
 
 volatile uint32_t clk = 0;
 volatile uint32_t aux = 0;
-volatile uint32_t counter = 0;
 
 void main(void)
 {
@@ -170,32 +165,32 @@ void main(void)
 
 	// LOOP
     while(1){
+       	clk = CS_getSMCLK();
+        aux = CS_getACLK();
+    	/*
+    	// Enable SPI_Rate_Flag Interrupt
+		MAP_Interrupt_enableInterrupt(INT_TA3_N);
+		// SPI Read
+		SPI_Collect_Data();
+    	// Disable SPI_Rate_Flag Interrupt
+		MAP_Interrupt_disableInterrupt(INT_TA3_N);
 
-			// SPI Read
+		// Condition EMG Data
+		EMG_Condition_Data();
+    	 */
+		//Read Pot(output angle value
 
-    		// Enable SPI_Rate_Flag Interrupt
-			MAP_Interrupt_enableInterrupt(INT_TA3_N);
-			SPI_Collect_Data();
-    		// Disable SPI_Rate_Flag Interrupt
-			MAP_Interrupt_disableInterrupt(INT_TA3_N);
+		//Normalize pot coefficient
 
-			// Condition EMG Data
+		//direction comparator(outputs direction coefficient)
 
-			EMG_Condition_Data();
+		//Read FSR(get adc value)
 
-			//Read Pot(output angle value
+		//threshold determination
 
-			//Normalize pot coefficient
+		//Motor coeficient multiplication(also check calibration values here)
 
-			//direction comparator(outputs direction coefficient)
-
-			//Read FSR(get adc value)
-
-			//threshold determination
-
-			//Motor coeficient multiplication(also check calibration values here)
-
-			//actuate motor
+		//actuate motor
 
 
 
@@ -241,7 +236,7 @@ void adc_isr(void)
     }
 }
 
-void proccess_interupt(void)
+void SPI_DATA_RATE_ISR(void)
 {
 	//1E-6 secs, 1mghz
 	//.004, 250hz
