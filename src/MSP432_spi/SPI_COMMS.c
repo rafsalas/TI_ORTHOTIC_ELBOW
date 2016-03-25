@@ -530,7 +530,7 @@ void EMG_Condition_Data(void)
 	double sum = 0;
 	double average;
 	// CONDITION DATA
-	for(i=0;i<NUM_CHANNELS;i++) // Iterate over (8) Channels
+	for(i=0;i<NUM_ACTIVE_CHANNELS;i++) // Iterate over (4) Active Channels
 	{
 		for(j=0;j<N_WIN;j++)
 		{
@@ -585,6 +585,7 @@ void Convolution(int trim, double* a, int N_a, double* b, int N_b, double* Resul
 	}
 }
 
+
 //----------------------interrupts----------------------------------------------------------------------
 
 void gpio_isr3(void)//drdy intrpt
@@ -601,27 +602,6 @@ void gpio_isr3(void)//drdy intrpt
     }
 }
 
-
-
-
-
-/*
-void SPI_Data_Rate_ISR(void)
-{
-	// 1000 Hz Interrupt
-
-	SPI_Rate_Flag = 1;
-
-	counter = counter +1;
-	if (counter > 4000000){
-		counter = 0;
-	}
-    MAP_Timer_A_clearInterruptFlag(TIMER_A3_MODULE);
-   MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
-
-
-}
-*/
 
 
 
