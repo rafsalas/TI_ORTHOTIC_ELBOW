@@ -473,6 +473,8 @@ void drdy_setup(){
     MAP_Interrupt_enableMaster();
 }
 
+#include <eusci.h>
+#include <spi.h>
 
 void SPI_Collect_Data(void)
 {
@@ -483,12 +485,14 @@ void SPI_Collect_Data(void)
 		for(win_i=0;win_i<N_WIN;win_i++)
 		{
 
+
 			// DELAY IF DRDY NOT READY
 			//probe drdy___________________________________________________________________________________________
-			while(Drdy==0) __delay_cycles(10);
+			//while(Drdy==0) __delay_cycles(10);
 
 
 			// READ DATA BY COMMAND
+
 			MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x12); // RDATAC
 			__delay_cycles(100);
 
@@ -496,9 +500,12 @@ void SPI_Collect_Data(void)
 			// Issue 24 + CHANNELS*24 SCLK Signals (216 Clock Signals)
 			for(i=0;i<(NUM_CHANNELS+1)*3;i++)
 			{
-		    	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); // DUMMY Data Signal; 8 SCLK Signals
-		    	__delay_cycles(100); // Read Delay
-		    	SPI_Raw_Data[i] = MAP_SPI_receiveData(EUSCI_B0_MODULE);
+				EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
+		    	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); // DUMMY Data Signal; 8 SCLK Signals
+		    	//__delay_cycles(50); // Read Delay
+		    	//SPI_Raw_Data[i] = MAP_SPI_receiveData(EUSCI_B0_MODULE);
+		    	SPI_Raw_Data[i]= EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r;
+
 			}
 
 			// FORMAT DATA STORAGE

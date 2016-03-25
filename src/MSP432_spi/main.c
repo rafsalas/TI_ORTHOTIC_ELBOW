@@ -157,8 +157,17 @@ void main(void)
 			//setup_Motor_Driver();
 
 
+	__delay_cycles(10000000); // Read Delay
+
+	MAP_Interrupt_enableInterrupt(INT_TA3_N);
+
+	SPI_Collect_Data();
+
+	MAP_Interrupt_disableInterrupt(INT_TA3_N);
+
 
 	// LOOP
+	/*
     while(1){
 
 
@@ -181,28 +190,8 @@ void main(void)
 
 		//actuate motor
 
-
-
-
-
-/*
-    	//clk = CS_getMCLK();
-    	clk = CS_getACLK();
-    	__delay_cycles(1000000); // Read Delay
-    	//timer_test = 0;
-    	//timer_test=timer_test+1;
-    	aux=Timer_A_getCounterValue(TIMER_A3_MODULE);
-    	//clk = counter;
-    	SPI_Collect_Data();
-    	//aux = counter;
-    	timer_test=Timer_A_getCounterValue(TIMER_A3_MODULE)- aux;
-    	//__delay_cycles(100000);
-    	//timer_test=timer_test+1;
-    //x = CS_getSMCLK();
-*/
-
-
     }
+	*/
 }
 //-----------------------------------------------Interrupts
 
