@@ -106,7 +106,7 @@ void timersetup(){
 
     /* Starting and enabling ACLK (32kHz) */
     MAP_CS_setReferenceOscillatorFrequency(CS_REFO_128KHZ);
-    MAP_CS_initClockSignal(CS_ACLK, CS_REFOCLK_SELECT, CS_CLOCK_DIVIDER_4);
+    MAP_CS_initClockSignal(CS_ACLK, CS_REFOCLK_SELECT, CS_CLOCK_DIVIDER_4);//aux clk div
     /* Configuring Continuous Mode */
     MAP_Timer_A_configureContinuousMode(TIMER_A3_MODULE, &continuousModeConfig);
     /* Enabling interrupts and going to sleep */
