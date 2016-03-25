@@ -561,7 +561,7 @@ void EMG_Condition_Data(void)
 		}
 
 		// Convolution
-		Convolution(N_FIR_HP,&EMG_Voltage_Window[0],N_WIN,&h_HP[0],N_FIR_HP,p);
+		Convolution(N_FIR_HP,EMG_Voltage_Window,N_WIN,&h_HP[0],N_FIR_HP,p);
 
 		for(j=N_FIR_HP;j<N_WIN;j++)
 		{
