@@ -145,7 +145,7 @@ void main(void)
 		// BLUETOOTH ROUTINE
 			//Bluetooth
 			//Bluetooth
-
+			//printf(EUSCI_A0_MODULE,"hi\n" );
 
 		// SPI SETUP
 			spi_setup();
@@ -154,19 +154,18 @@ void main(void)
 
 
 		// TIMER SETUP
-			timersetup();
+			//timersetup();
 
 
 		// MOTOR SETUP
-			setup_Motor_Driver();
-
+			//setup_Motor_Driver();
 
 
 
 	// LOOP
     while(1){
-       	clk = CS_getSMCLK();
-        aux = CS_getACLK();
+
+
     	/*
     	// Enable SPI_Rate_Flag Interrupt
 		MAP_Interrupt_enableInterrupt(INT_TA3_N);
@@ -227,6 +226,7 @@ void adc_isr(void)
     {
         a = ADC14_getResult(ADC_MEM0);
     }*/
+
     if(status & ADC_INT1)
     {
         MAP_ADC14_getMultiSequenceResult(resultsBuffer);
