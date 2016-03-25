@@ -10,6 +10,11 @@
 //4.0,4.1,4.2,4.5,4.6
 //5.0,5.1,5.4,5.5
 //7.5,7.7
+/*
+*clock_table
+*|MCLK  |SMCLK  |ACLK  |SPICLK  |TIMER3  |
+*|3MHz  |3MHz   |32KHz |1MHz    |1000Hz  |
+*/
 #include <driverlib.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -41,22 +46,13 @@ uint8_t SPI_Connected = 0; // Flag to Wait Until SPI Initialiation Complete
 // EMG
 double EMG[8][50]; // 8 Channel History (Filtered, Rectified, Averaged)
 
-
 //////
 // END
 //////
 
-
-
-
-
-volatile uint16_t x = 0;
-
+//-----------------------------------------------ADC
 static uint16_t resultsBuffer[2];// used for ADC
 volatile uint16_t a,b =0; //used for adc testing
-
-volatile uint32_t timer_test = 0;
-//-----------------------------------------------ADC
 
 void adc(){
 
@@ -136,7 +132,6 @@ void timersetup(){
 
 volatile uint32_t clk = 0;
 volatile uint32_t aux = 0;
-volatile uint32_t counter = 0;
 
 void main(void)
 {
@@ -150,7 +145,7 @@ void main(void)
 		// BLUETOOTH ROUTINE
 			//Bluetooth
 			//Bluetooth
-
+			//printf(EUSCI_A0_MODULE,"hi\n" );
 
 		// SPI SETUP
 			spi_setup();
@@ -159,12 +154,11 @@ void main(void)
 
 
 		// TIMER SETUP
-			timersetup();
+			//timersetup();
 
 
 		// MOTOR SETUP
-			setup_Motor_Driver();
-
+			//setup_Motor_Driver();
 
 
 	__delay_cycles(10000000); // Read Delay
@@ -180,31 +174,30 @@ void main(void)
 	/*
     while(1){
 
-			// SPI Read
+    	// Enable SPI_Rate_Flag Interrupt
+		MAP_Interrupt_enableInterrupt(INT_TA3_N);
+		// SPI Read
+		SPI_Collect_Data();
+    	// Disable SPI_Rate_Flag Interrupt
+		MAP_Interrupt_disableInterrupt(INT_TA3_N);
 
-    		// Enable SPI_Rate_Flag Interrupt
-			MAP_Interrupt_enableInterrupt(INT_TA3_N);
-			SPI_Collect_Data();
-    		// Disable SPI_Rate_Flag Interrupt
-			MAP_Interrupt_disableInterrupt(INT_TA3_N);
+		// Condition EMG Data
+		EMG_Condition_Data();
 
-			// Condition EMG Data
+		//Read Pot(output angle value
 
-			EMG_Condition_Data();
+		//Normalize pot coefficient
 
-			//Read Pot(output angle value
+		//direction comparator(outputs direction coefficient)
 
-			//Normalize pot coefficient
+		//Read FSR(get adc value)
 
-			//direction comparator(outputs direction coefficient)
+		//threshold determination
 
-			//Read FSR(get adc value)
+		//Motor coeficient multiplication(also check calibration values here)
 
-			//threshold determination
+		//actuate motor
 
-			//Motor coeficient multiplication(also check calibration values here)
-
-			//actuate motor
     }
 	*/
 }
@@ -220,6 +213,7 @@ void adc_isr(void)
     {
         a = ADC14_getResult(ADC_MEM0);
     }*/
+
     if(status & ADC_INT1)
     {
         MAP_ADC14_getMultiSequenceResult(resultsBuffer);
@@ -229,7 +223,7 @@ void adc_isr(void)
     }
 }
 
-void proccess_interupt(void)
+void SPI_DATA_RATE_ISR(void)
 {
 	//1E-6 secs, 1mghz
 	//.004, 250hz
