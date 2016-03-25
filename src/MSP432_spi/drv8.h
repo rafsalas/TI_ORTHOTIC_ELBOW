@@ -21,7 +21,7 @@ Timer_A_PWMConfig pwmConfig3;
 bool fault;
 
 
-void intiallize();
+void setup_Motor_Driver();
 void setup_PWM();
 void drive_forward();
 void drive_reverse();

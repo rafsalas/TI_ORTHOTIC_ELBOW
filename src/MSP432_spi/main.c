@@ -24,6 +24,12 @@
 //-----------------------------------------------Variables
 
 ///////////////////////////
+// MAIN ROUTINE
+///////////////////////////
+uint8_t Main_Routine_Rate_Flag = 0x00; // Flag for Main Routine Timer
+
+
+///////////////////////////
 // BODY-TO-SENSOR INTERFACE
 ///////////////////////////
 // SPI
@@ -33,6 +39,7 @@ uint8_t SPI_Connected = 0; // Flag to Wait Until SPI Initialiation Complete
 
 // EMG
 double EMG[8][50]; // 8 Channel History (Filtered, Rectified, Averaged)
+
 
 //////
 // END
@@ -125,19 +132,50 @@ volatile uint32_t counter = 0;
 void main(void)
 {
 	MAP_WDT_A_holdTimer();
-	drdy_setup();
-	//adc();
-	//uart_setup();
-	//encoderInit();
-	spi_setup();
-	spi_start();
-	timersetup();
-	//intiallize();
-    //setup_PWM();
-    //drive_forward();
-    //drive_reverse();
 
+	// INITIALIZATION
+		// UART
+		//uart_setup();
+
+		// BLUETOOTH ROUTINE
+			//Bluetooth
+			//Bluetooth
+
+
+		// SPI SETUP
+			spi_setup();
+			spi_start();
+			drdy_setup();
+
+
+		// Timer Setup
+			timersetup();
+
+		// Motor Control
+			setup_Motor_Driver();
+
+
+
+
+	// LOOP
     while(1){
+
+    	if(Main_Routine_Rate_Flag)
+    	{
+    		Main_Routine_Rate_Flag = 0; // Clear Flag
+
+			// SPI Read
+    		// Enable SPI_Rate_Flag Interrupt
+			SPI_Collect_Data();
+    		// Disable SPI_Rate_Flag Interrupt
+
+			// Condition EMG Data
+			EMG_Condition_Data();
+    	}
+
+
+
+/*
     	//clk = CS_getMCLK();
     	clk = CS_getACLK();
     	__delay_cycles(1000000); // Read Delay
@@ -150,17 +188,8 @@ void main(void)
     	timer_test=Timer_A_getCounterValue(TIMER_A3_MODULE)- aux;
     	//__delay_cycles(100000);
     	//timer_test=timer_test+1;
-    	//hi pens
     //x = CS_getSMCLK();
-    	/*
-    	if(Drdy>0)
-    	{
-    		SPI_Collect_Data();
-    		Drdy=Drdy-1;
-        	__delay_cycles(10000); // Read Delay
-
-    	}
-		*/
+*/
 
 
     }
@@ -190,12 +219,17 @@ void proccess_interupt(void)
 {//1E-6 secs, 1mghz
  //.004, 250hz
  //4000 cycles
+
+	Main_Routine_Rate_Flag = 1;
+
 	counter = counter +1;
 	if (counter > 4000000){
 		counter = 0;
 	}
     MAP_Timer_A_clearInterruptFlag(TIMER_A3_MODULE);
    MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+
+
 }
 
 
