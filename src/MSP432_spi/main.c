@@ -26,7 +26,7 @@
 ///////////////////////////
 // MAIN ROUTINE
 ///////////////////////////
-uint8_t Main_Routine_Rate_Flag = 0x00; // Flag for Main Routine Timer
+uint8_t Main_Routine_Rate_Flag = 0x00; // Flag for Main Routine Interrupt
 
 
 ///////////////////////////
@@ -111,11 +111,15 @@ void timersetup(){
     MAP_GPIO_setAsOutputPin(GPIO_PORT_P1, GPIO_PIN0);
     MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
 
-    /* Starting and enabling ACLK (32kHz) */
+    /* Starting and enabling ACLK (128 kHz) */
     MAP_CS_setReferenceOscillatorFrequency(CS_REFO_128KHZ);
+
+    /* ACLK Divided (128/4 kHz) */
     MAP_CS_initClockSignal(CS_ACLK, CS_REFOCLK_SELECT, CS_CLOCK_DIVIDER_4);//aux clk div
+
     /* Configuring Continuous Mode */
     MAP_Timer_A_configureContinuousMode(TIMER_A3_MODULE, &continuousModeConfig);
+
     /* Enabling interrupts and going to sleep */
     MAP_Interrupt_enableSleepOnIsrExit();
     MAP_Interrupt_enableInterrupt(INT_TA3_N);
@@ -135,7 +139,8 @@ void main(void)
 
 	// INITIALIZATION
 		// UART
-		//uart_setup();
+			//uart_setup();
+
 
 		// BLUETOOTH ROUTINE
 			//Bluetooth
@@ -148,10 +153,11 @@ void main(void)
 			drdy_setup();
 
 
-		// Timer Setup
+		// TIMER SETUP
 			timersetup();
 
-		// Motor Control
+
+		// MOTOR SETUP
 			setup_Motor_Driver();
 
 
@@ -165,12 +171,12 @@ void main(void)
     		Main_Routine_Rate_Flag = 0; // Clear Flag
 
 			// SPI Read
-    		// Enable SPI_Rate_Flag Interrupt
-			SPI_Collect_Data();
-    		// Disable SPI_Rate_Flag Interrupt
+				// Enable SPI_Rate_Flag Interrupt
+				SPI_Collect_Data();
+				// Disable SPI_Rate_Flag Interrupt
 
 			// Condition EMG Data
-			EMG_Condition_Data();
+				EMG_Condition_Data();
     	}
 
 
@@ -216,18 +222,15 @@ void adc_isr(void)
 }
 
 void proccess_interupt(void)
-{//1E-6 secs, 1mghz
- //.004, 250hz
- //4000 cycles
+{
+	//1E-6 secs, 1mghz
+	//.004, 250hz
+	//4000 cycles
 
 	Main_Routine_Rate_Flag = 1;
 
-	counter = counter +1;
-	if (counter > 4000000){
-		counter = 0;
-	}
     MAP_Timer_A_clearInterruptFlag(TIMER_A3_MODULE);
-   MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+    MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
 
 
 }

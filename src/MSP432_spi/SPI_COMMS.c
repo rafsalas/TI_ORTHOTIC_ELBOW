@@ -553,7 +553,7 @@ void EMG_Condition_Data(void)
 	double sum = 0;
 	double average;
 	// CONDITION DATA
-	for(i=0;i<NUM_CHANNELS;i++) // Iterate over (8) Channels
+	for(i=0;i<NUM_ACTIVE_CHANNELS;i++) // Iterate over (4) Active Channels
 	{
 		for(j=0;j<N_WIN;j++)
 		{
@@ -608,7 +608,7 @@ void Convolution(int trim, double* a, int N_a, double* b, int N_b, double* Resul
 	}
 }
 
-/*
+
 void SPI_Data_Rate_ISR(void)
 {
 	// 1000 Hz Interrupt
@@ -624,7 +624,7 @@ void SPI_Data_Rate_ISR(void)
 
 
 }
-*/
+
 
 
 
