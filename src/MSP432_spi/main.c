@@ -170,7 +170,6 @@ void main(void)
 	/*
     while(1){
 
-
 		// SPI Read
 		SPI_Collect_Data();
 		// Condition EMG Data
