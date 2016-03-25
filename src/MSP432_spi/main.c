@@ -20,7 +20,6 @@
 #include <stdbool.h>
 #include <QMathLib.h>
 #include "printf.h"
-#include "RadialEncoder.h"
 #include <string.h>
 #include "SPI_COMMS.h"
 #include "UART_COMMS.h"
@@ -38,7 +37,7 @@ uint8_t Main_Routine_Rate_Flag = 0x00; // Flag for Main Routine Interrupt
 // BODY-TO-SENSOR INTERFACE
 ///////////////////////////
 // SPI
-uint8_t SPI_Rate_Flag = 0x00; // Flag for SPI Sample Rate
+
 uint8_t Drdy = 0x00; //Flag for DRDY on SPI Channel
 uint8_t SPI_Cleared = 1; // Flag to Wait Until SPI Channel Clears
 uint8_t SPI_Connected = 0; // Flag to Wait Until SPI Initialiation Complete
@@ -138,24 +137,21 @@ void main(void)
 	MAP_WDT_A_holdTimer();
 
 	// INITIALIZATION
-		// UART
-			//uart_setup();
+
 
 
 		// BLUETOOTH ROUTINE
 			//Bluetooth
 			//Bluetooth
-			//printf(EUSCI_A0_MODULE,"hi\n" );
+
 
 		// SPI SETUP
 			spi_setup();
 			spi_start();
 			drdy_setup();
 
-
-		// TIMER SETUP
-			//timersetup();
-
+		// UART
+			//uart_setup();
 
 		// MOTOR SETUP
 			//setup_Motor_Driver();
@@ -165,13 +161,9 @@ void main(void)
 	// LOOP
     while(1){
 
-    	// Enable SPI_Rate_Flag Interrupt
-		MAP_Interrupt_enableInterrupt(INT_TA3_N);
+
 		// SPI Read
 		SPI_Collect_Data();
-    	// Disable SPI_Rate_Flag Interrupt
-		MAP_Interrupt_disableInterrupt(INT_TA3_N);
-
 		// Condition EMG Data
 		EMG_Condition_Data();
 
@@ -236,15 +228,8 @@ void adc_isr(void)
 
 void SPI_DATA_RATE_ISR(void)
 {
-	//1E-6 secs, 1mghz
-	//.004, 250hz
-	//4000 cycles
 
-	SPI_Rate_Flag = 1;
-
-    MAP_Timer_A_clearInterruptFlag(TIMER_A3_MODULE);
-    MAP_GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
-
+//used later for power consumption
 
 }
 

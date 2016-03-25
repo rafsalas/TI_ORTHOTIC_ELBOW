@@ -483,10 +483,6 @@ void SPI_Collect_Data(void)
 		for(win_i=0;win_i<N_WIN;win_i++)
 		{
 
-			SPI_Rate_Flag=0;
-			while(SPI_Rate_Flag);
-
-
 			// DELAY IF DRDY NOT READY
 			//probe drdy___________________________________________________________________________________________
 			while(Drdy==0) __delay_cycles(10);
