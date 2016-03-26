@@ -151,46 +151,31 @@ void main(void)
 			drdy_setup();
 
 		// UART
-			//uart_setup();
+			uart_setup();
 
 		// MOTOR SETUP
 			//setup_Motor_Driver();
 
 
-	__delay_cycles(10000000); // Read Delay
+//	__delay_cycles(10000000); // Read Delay
 
-	MAP_Interrupt_enableInterrupt(INT_TA3_N);
+//	SPI_Collect_Data();
 
-	SPI_Collect_Data();
 
-	MAP_Interrupt_disableInterrupt(INT_TA3_N);
 
-//hi
+
 	// LOOP
-	/*
+
     while(1){
+    	clk = CS_getMCLK();
+		aux = CS_getSMCLK();
 
-		// SPI Read
-		SPI_Collect_Data();
-		// Condition EMG Data
-		EMG_Condition_Data();
+    	printf(EUSCI_A0_MODULE,"fries\n\r\n\r");
 
-		//Read Pot(output angle value
-
-		//Normalize pot coefficient
-
-		//direction comparator(outputs direction coefficient)
-
-		//Read FSR(get adc value)
-
-		//threshold determination
-
-		//Motor coeficient multiplication(also check calibration values here)
-
-		//actuate motor
+    	__delay_cycles(1000000);
 
     }
-	*/
+
 }
 //-----------------------------------------------Interrupts
 

@@ -28,8 +28,8 @@ void uart_setup(){
     //MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
 
     /* Setting DCO to 48MHz (upping Vcore) */
-    MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
-    CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
+    // clock is changed in the print f portion
+    //same must happen for  input also
     //CS_setExternalClockSourceFrequency
     /* Configuring UART Module */
     MAP_UART_initModule(EUSCI_A0_MODULE, &uartConfig);
