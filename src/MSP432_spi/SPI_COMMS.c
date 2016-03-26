@@ -583,6 +583,13 @@ void Convolution(int trim, double* a, int N_a, double* b, int N_b, double* Resul
 	}
 }
 
+void Comparator(){
+
+
+}
+
+
+
 
 //----------------------interrupts----------------------------------------------------------------------
 

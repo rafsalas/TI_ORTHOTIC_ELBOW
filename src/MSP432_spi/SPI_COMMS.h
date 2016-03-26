@@ -54,7 +54,7 @@ int32_t twos_to_signed (uint32_t msb, uint32_t mid, uint32_t lsb);
 // Trim Unstable + Irrelevant Edges
 void Convolution(int trim, double* a, int N_a, double* b, int N_b, double* p);
 
-//Compare between the two tricep and bicep
+//Compare between the two tricep and bicep channels to determine direction
 void Comparator();
 
 
