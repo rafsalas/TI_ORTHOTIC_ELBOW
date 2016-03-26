@@ -66,6 +66,8 @@ static void puth(uint32_t moduleInstance, unsigned n) {
 
 void printf(uint32_t moduleInstance, char *format, ...)
 {
+    MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
+    CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
 	char c;
 	int i;
 	long n;
@@ -100,9 +102,16 @@ void printf(uint32_t moduleInstance, char *format, ...)
 					puth(moduleInstance, i >> 4);
 					puth(moduleInstance, i);
 				break;
-				case 0: return;
-				default: goto bad_fmt;
+				case 0:
+					MAP_PCM_setCoreVoltageLevel(PCM_VCORE0);
+					CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_3);
+					return;
+				default:
+				    MAP_PCM_setCoreVoltageLevel(PCM_VCORE0);
+				    CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_3);
+					goto bad_fmt;
 			}
+;
 		} else
 			bad_fmt: putc(moduleInstance, c);
 	}

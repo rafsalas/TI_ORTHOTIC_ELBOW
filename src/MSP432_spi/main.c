@@ -151,14 +151,15 @@ void main(void)
 			drdy_setup();
 
 		// UART
-			//uart_setup();
+			uart_setup();
 
 		// MOTOR SETUP
 			//setup_Motor_Driver();
-
+			printf(EUSCI_A0_MODULE,"result1\n\r" );
 
 	__delay_cycles(10000000); // Read Delay
-
+			clk = CS_getMCLK();
+			clk = CS_getSMCLK();
 	MAP_Interrupt_enableInterrupt(INT_TA3_N);
 
 	SPI_Collect_Data();
