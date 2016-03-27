@@ -170,9 +170,19 @@ void main(void)
     	clk = CS_getMCLK();
 		aux = CS_getSMCLK();
 
-    	printf(EUSCI_A0_MODULE,"fries\n\r\n\r");
+    	MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
 
-    	__delay_cycles(1000000);
+    	CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
+
+    	printf(EUSCI_A0_MODULE,"fies\n\r\n\r");
+		//UART_transmitData(EUSCI_A2_MODULE, 'g');
+
+    	clk = CS_getMCLK();
+    	aux = CS_getSMCLK();
+    	__delay_cycles(10000000);
+    	MAP_PCM_setCoreVoltageLevel(PCM_VCORE0);
+
+    	CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_3);
 
     }
 

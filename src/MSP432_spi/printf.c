@@ -70,9 +70,6 @@ void printf(uint32_t moduleInstance, char *format, ...)
 	int i;
 	long n;
 
-	MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
-	CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
-
 	va_list a;
 	va_start(a, format);
 	while(c = *format++) {
@@ -105,8 +102,6 @@ void printf(uint32_t moduleInstance, char *format, ...)
 				break;
 				case 0: return;
 				default: goto bad_fmt;
-				MAP_PCM_setCoreVoltageLevel(PCM_VCORE0);
-				CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_3);
 			}
 		} else
 			bad_fmt: putc(moduleInstance, c);
