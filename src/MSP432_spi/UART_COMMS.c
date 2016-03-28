@@ -6,8 +6,8 @@
  */
 
 #include "UART_COMMS.h"
-
-
+volatile uint8_t RXData = 0;
+volatile uint8_t rx= 0;
 void uart_setup(){
 	const eUSCI_UART_Config uartConfig =
 	{
@@ -28,13 +28,42 @@ void uart_setup(){
     //MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
 
     /* Setting DCO to 48MHz (upping Vcore) */
-    //MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
-    //CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
+//    MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
+//    CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
     //CS_setExternalClockSourceFrequency
+
     /* Configuring UART Module */
     MAP_UART_initModule(EUSCI_A0_MODULE, &uartConfig);
 
     /* Enable UART module */
     MAP_UART_enableModule(EUSCI_A0_MODULE);
+
+    MAP_UART_enableInterrupt(EUSCI_A0_MODULE, EUSCI_A_UART_RECEIVE_INTERRUPT);
+    MAP_Interrupt_enableInterrupt(INT_EUSCIA0);
+
     MAP_Interrupt_enableMaster();
+}
+
+
+/* EUSCI A0 UART ISR - Echos data back to PC host */
+void euscia0_isr(void)
+{
+	rx =1;
+    uint32_t status = MAP_UART_getEnabledInterruptStatus(EUSCI_A0_MODULE);
+
+    MAP_UART_clearInterruptFlag(EUSCI_A0_MODULE, status);
+
+    if(status & EUSCI_A_UART_RECEIVE_INTERRUPT)
+    {
+        RXData = MAP_UART_receiveData(EUSCI_A0_MODULE);
+
+       /* if(RXData != TXData)              // Check value
+        {
+            MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
+            while(1);                       // Trap CPU
+        }*/
+        //TXData++;
+        MAP_Interrupt_disableSleepOnIsrExit();
+    }
+
 }

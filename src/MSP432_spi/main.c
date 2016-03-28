@@ -155,22 +155,33 @@ void main(void)
 
 		// MOTOR SETUP
 			//setup_Motor_Driver();
-			printf(EUSCI_A0_MODULE,"result1\n\r" );
 
-	__delay_cycles(10000000); // Read Delay
-			clk = CS_getMCLK();
-			clk = CS_getSMCLK();
+
+/*	__delay_cycles(10000000); // Read Delay
 	MAP_Interrupt_enableInterrupt(INT_TA3_N);
 
 	SPI_Collect_Data();
 
-	MAP_Interrupt_disableInterrupt(INT_TA3_N);
-
+	MAP_Interrupt_disableInterrupt(INT_TA3_N);*/
+		MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
+    	CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
 
 	// LOOP
-	/*
+
     while(1){
 
+    	_delay_cycles(10000);
+    	clk = CS_getMCLK();
+    	aux = CS_getSMCLK();
+    	char c = 'g';
+    	//MAP_UART_transmitData(EUSCI_A0_MODULE, c);
+    	//printf(EUSCI_A0_MODULE,"rsult\n\r");
+    	//__delay_cycles(10000);
+
+    	//CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_3);
+    	//MAP_PCM_setCoreVoltageLevel(PCM_VCORE0);
+
+/*
 		// SPI Read
 		SPI_Collect_Data();
 		// Condition EMG Data
@@ -189,9 +200,9 @@ void main(void)
 		//Motor coeficient multiplication(also check calibration values here)
 
 		//actuate motor
-
+*/
     }
-	*/
+
 }
 //-----------------------------------------------Interrupts
 
