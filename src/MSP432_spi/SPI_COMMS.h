@@ -33,6 +33,11 @@ extern uint8_t SPI_Connected; //Flag for SPI Initialize Complete
 // EMG DATA
 extern double EMG[8][50]; // 8 Channel History (Filtered, Rectified, Averaged)
 
+// NORMALIZATION ROUTINE
+extern double EMG_max[8]; // Maximum EMG Signal
+extern double EMG_min[8];// = {100, 100, 100, 100, 100, 100, 100, 100}; // Minimum EMG Signal
+extern double EMG_min_i[8];// = {51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51}; // Minimum EMG Signal Index
+
 
 void spi_setup();
 void spi_start();
@@ -52,7 +57,8 @@ int32_t twos_to_signed (uint32_t msb, uint32_t mid, uint32_t lsb);
 
 // CONVOLUTION COMPUTATION
 // Trim Unstable + Irrelevant Edges
-void Convolution(int trim, double* a, int N_a, double* b, int N_b, double* p);
+void Convolution2();
+void Convolution(uint32_t trim, double* a, uint32_t N_a, double* b, uint32_t N_b, double* p);
 
 //Compare between the two tricep and bicep
 void Comparator();

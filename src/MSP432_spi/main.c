@@ -45,6 +45,11 @@ uint8_t SPI_Connected = 0; // Flag to Wait Until SPI Initialiation Complete
 // EMG
 double EMG[8][50]; // 8 Channel History (Filtered, Rectified, Averaged)
 
+// NORMALIZATION ROUTINE
+double EMG_max[8]; // Maximum EMG Signal
+double EMG_min[8];// = {100, 100, 100, 100, 100, 100, 100, 100}; // Minimum EMG Signal
+double EMG_min_i[8];// = {51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51}; // Minimum EMG Signal Index
+
 //////
 // END
 //////
@@ -143,7 +148,8 @@ void main(void)
 		// BLUETOOTH ROUTINE
 			//Bluetooth
 			//Bluetooth
-
+		    MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
+		    CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
 
 		// SPI SETUP
 			spi_setup();
@@ -157,14 +163,26 @@ void main(void)
 			//setup_Motor_Driver();
 
 
-/*	__delay_cycles(10000000); // Read Delay
-	MAP_Interrupt_enableInterrupt(INT_TA3_N);
 
-	SPI_Collect_Data();
-
-	MAP_Interrupt_disableInterrupt(INT_TA3_N);*/
 		MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
     	CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
+
+	/*while(1){
+		__delay_cycles(100);
+
+
+		MAP_Interrupt_enableInterrupt(INT_TA3_N);
+
+		SPI_Collect_Data();
+
+		MAP_Interrupt_disableInterrupt(INT_TA3_N);
+
+		EMG_Condition_Data();
+
+
+
+	}*/
+
 
 	// LOOP
 
