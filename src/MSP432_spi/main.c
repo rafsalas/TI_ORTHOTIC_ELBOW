@@ -148,7 +148,8 @@ void main(void)
 		// BLUETOOTH ROUTINE
 			//Bluetooth
 			//Bluetooth
-
+		    MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
+		    CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
 
 		// SPI SETUP
 			spi_setup();

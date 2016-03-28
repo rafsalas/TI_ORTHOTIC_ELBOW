@@ -85,7 +85,7 @@ void spi_setup(){
 	{
         EUSCI_B_SPI_CLOCKSOURCE_SMCLK,              // ACLK Clock Source
 		MAP_CS_getSMCLK(),//32768,                                     // ACLK = LFXT = 32.768khz
-		1000000,//1000000,                                    // SPICLK = 500khz (110k)
+		2000000,//1000000,                                    // SPICLK = 500khz (110k)
         EUSCI_B_SPI_MSB_FIRST,                     // MSB First
         EUSCI_B_SPI_PHASE_DATA_CHANGED_ONFIRST_CAPTURED_ON_NEXT,    // Phaseb
         EUSCI_B_SPI_CLOCKPOLARITY_INACTIVITY_LOW, // low polarity
