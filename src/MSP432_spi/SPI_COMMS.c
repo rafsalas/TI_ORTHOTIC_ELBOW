@@ -48,6 +48,7 @@ double SPI_Data_Window[8][100]; // 8 Channels, 100 Sample Window
 uint32_t EMG_i; // EMG Sample Number
 double EMG_Voltage_Window[100]; // Raw Data / ADC Resolution
 const double ADS1299_Resolution = 0x1000000; // 24-Bit Resolution
+double EMG_Convolution[100+11-1]; // Convolution Result
 
 
 // DSP PARAMETERS
@@ -61,11 +62,6 @@ double h_HP[11] = { // Filter Coefficients for High Pass Filter
 	     0.1160770995248,  -0.2602154869553,  -0.2455987326682
 };
 
-
-// NORMALIZATION ROUTINE
-double EMG_max[8]; // Maximum EMG Signal
-double EMG_min[8];// = {100, 100, 100, 100, 100, 100, 100, 100}; // Minimum EMG Signal
-double EMG_min_i[8];// = {51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51}; // Minimum EMG Signal Index
 
 //-------------------------------------------------------
 void spi_setup(){
@@ -106,22 +102,18 @@ void spi_setup(){
 }
 
 
-
 int32_t twos_to_signed (uint32_t msb, uint32_t mid, uint32_t lsb){
 
 	// Cast Inputs as 8 Bit Unsigned Integer
-	msb = msb & 0xFF; mid = mid & 0xFF; lsb = lsb & 0xFF;
+	//msb = msb & 0xFF; mid = mid & 0xFF; lsb = lsb & 0xFF;
 
 	uint32_t num = (msb<<16)|(mid<<8)|(lsb); 	// Concatenate Bytes
 
-	int32_t num2; 	// Signed Result
+	//num = num&(0xFFFFFF); // Cast Number as 24 Bit Integer
 
-	num = num&(0xFFFFFF); // Cast Number as 24 Bit Integer
+	if((num>>23)%2==1) return-((1<<24)-num); // If 24th Bit is a 1, then use 2's Complement
+	else return num; // Otherwise, no need for 2's complement
 
-	if((num>>23)%2==1) num2=-((1<<24)-num); // If 24th Bit is a 1, then use 2's Complement
-	else num2=num; // Otherwise, no need for 2's complement
-
-    return num2;
 }
 
 
@@ -274,7 +266,9 @@ void spi_write_registers(){
 	__delay_cycles(1000);
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x3E); // ID Register
 	__delay_cycles(1000);
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x96); // CONFIG1 Register
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x96); // CONFIG1 Register (DR 250 Hz)
+	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x95); // CONFIG1 Register (DR 500 Hz)
+	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x94); // CONFIG1 Register (DR 1000 Hz)
 	__delay_cycles(1000);
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0xC0); // CONFIG2 Register
 	__delay_cycles(1000);
@@ -479,47 +473,121 @@ void drdy_setup(){
 void SPI_Collect_Data(void)
 {
 	int win_i,i;
+	uint32_t container[3];
+	uint32_t container_1;
+	int32_t container_2;
+
+
 	if(SPI_Connected)
 	{
 
+		MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x08); //START
+		__delay_cycles(5000);
+
+		// READ DATA BY COMMAND
+		EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x12; // RDATAC
+		__delay_cycles(100); // SPI Delay
+
 		for(win_i=0;win_i<N_WIN;win_i++)
 		{
-			//while(SPI_Rate_Flag);
-			//SPI_Rate_Flag=0;
-
 
 			// DELAY IF DRDY NOT READY
-			//probe drdy___________________________________________________________________________________________
-			//while(Drdy==0) __delay_cycles(10);
+			//Drdy = GPIO_getInputPinValue(GPIO_PORT_P3,GPIO_PIN5);
+			//while(Drdy!=0) Drdy = GPIO_getInputPinValue(GPIO_PORT_P3,GPIO_PIN5);
+			//__delay_cycles(100); // SPI Delay
+
+
+
+			while(Drdy!=0);
 
 
 			// READ DATA BY COMMAND
+			EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x12; // RDATAC
+			__delay_cycles(100); // SPI Delay
 
-			MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x12); // RDATAC
-			__delay_cycles(100);
+			// Issue 24+CHANNELS*24 SCLK Signals (216 Clock Signals)
 
-			// PROMPT DATA STREAM
-			// Issue 24 + CHANNELS*24 SCLK Signals (216 Clock Signals)
-			for(i=0;i<(NUM_CHANNELS+1)*3;i++)
-			{
+			// IGNORE FIRST 3 BYTES
+			EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
+			__delay_cycles(100); // SPI Delay
+	    	if((EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r)==0xC0)
+	    	{
+
+
 				EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
-		    	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); // DUMMY Data Signal; 8 SCLK Signals
-		    	//__delay_cycles(50); // Read Delay
-		    	//SPI_Raw_Data[i] = MAP_SPI_receiveData(EUSCI_B0_MODULE);
-		    	SPI_Raw_Data[i]= EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r;
+				__delay_cycles(100); // SPI Delay
+
+				EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
+				__delay_cycles(100); // SPI Delay
+
+				// PROMPT DATA STREAM
+				//for(i=0;i<NUM_ACTIVE_CHANNELS;i++)
+				for(i=0;i<NUM_CHANNELS;i++)
+
+				{
+					EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
+					__delay_cycles(100); // SPI Delay
+
+					container[0]= EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r;
+					__delay_cycles(100); // SPI Delay
+
+
+					EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
+					__delay_cycles(100); // SPI Delay
+
+					container[1]= EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r;
+					__delay_cycles(100); // SPI Delay
+
+
+					EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
+					__delay_cycles(100); // SPI Delay
+
+					container[2]= EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r;
+					__delay_cycles(100); // SPI Delay
+
+
+					// Concatenate and 2's Complement
+					container_1 = (container[0]<<16)|(container[1]<<8)|(container[2]);
+
+					if((container_1>>23)%2==1) container_2=-((1<<24)-container_1);
+					else container_2=container_1;
+
+					SPI_Data_Window[i][win_i]=container_2;
+
+
+
+				}
+
+
+	/*
+				// IGNORE REMAINING DATA
+				for(i=NUM_ACTIVE_CHANNELS;i<NUM_CHANNELS;i++)
+				{
+					EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
+					__delay_cycles(100); // SPI Delay
+
+					EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
+					__delay_cycles(100); // SPI Delay
+
+					EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
+					__delay_cycles(100); // SPI Delay
+				}
+	*/
 
 			}
+	    	else if(win_i>0)
+	    	{
+				for(i=0;i<NUM_CHANNELS;i++)
+				{
+					SPI_Data_Window[i][win_i]=SPI_Data_Window[i][win_i-1];
+				}
 
-			// FORMAT DATA STORAGE
-			for(i=0;i<NUM_CHANNELS;i++) // Iterate over (8) Channels
-			{
-				// Concatenate and 2's Complement
-				// 3 (8 Bit Status Signal) + i * 3 (8 Bit Channel Signals)
-				SPI_Data[i] = twos_to_signed( SPI_Raw_Data[3+i*3],SPI_Raw_Data[3+i*3+1],SPI_Raw_Data[3+i*3+2]);
-				SPI_Data_Window[i][win_i]=SPI_Data[i];
-			}
+	    	}
 
 		}
+	    // STOP SPI CHANNEL
+		EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x0A; // STOP DATA Conversion
+
 	}
 }
 
@@ -529,6 +597,7 @@ void EMG_Condition_Data(void)
 	double *p = malloc(N_WIN+N_FIR_HP-1);
 	double sum = 0;
 	double average;
+
 	// CONDITION DATA
 	for(i=0;i<NUM_ACTIVE_CHANNELS;i++) // Iterate over (4) Active Channels
 	{
@@ -538,18 +607,22 @@ void EMG_Condition_Data(void)
 		}
 
 		// Convolution
-		Convolution(N_FIR_HP,EMG_Voltage_Window,N_WIN,&h_HP[0],N_FIR_HP,p);
+		//Convolution(N_FIR_HP,EMG_Voltage_Window,N_WIN,h_HP,N_FIR_HP,p);
+		Convolution2();
 
-		for(j=N_FIR_HP;j<N_WIN;j++)
+		for(j=N_FIR_HP;j<N_WIN-1;j++)
 		{
-			sum = sum + _Q1abs(*(p+i)); // Sum Middle of Convolution
+			//EMG[i][j]=EMG_Convolution[i]
+			//sum = sum + _Q1abs(*(double*)(p+i)); // Sum Middle of Convolution
+			sum = sum + _Q1abs(EMG_Convolution[j]); // Sum Middle of Convolution
 		}
 
 		average = sum/(N_WIN-N_FIR_HP); // Average Middle of Convolution
 
-		if(average>EMG_max[i]) EMG_max[i]=average;
 
-		if(average<EMG_min[i]) EMG_min[i]=average;
+		if(average>EMG_max[i] || EMG_max[i]==0) EMG_max[i]=average;
+
+		if(average<EMG_min[i] || EMG_min[i]==0) EMG_min[i]=average;
 
 		// EMG History Buffer
 		for(j=EMG_History-1;j>0;j--)
@@ -558,17 +631,42 @@ void EMG_Condition_Data(void)
 		}
 
 		EMG[i][0]=(average-EMG_min[i])/(EMG_max[i]-EMG_min[i]);
+
+		//EMG[i][0]=average;
 	}
 
 }
 
-void Convolution(int trim, double* a, int N_a, double* b, int N_b, double* Result)
+void Convolution2()
+{
+	//Result[N_a+N_b-1];
+	int n;
+	for (n=(0)+N_FIR_HP;n<(N_FIR_HP+N_WIN-1)-N_FIR_HP;n++)
+	{
+		int kmin, kmax, k;
+
+		EMG_Convolution[n] = 0;
+
+		if(n>=N_FIR_HP-1) kmin=n-(N_FIR_HP-1);
+		else kmin=0;
+
+		if(n<N_WIN-1) kmax=n;
+		else kmax=N_WIN-1;
+
+		for(k=kmin;k<=kmax;k++)
+		{
+			EMG_Convolution[n]=EMG_Voltage_Window[k]*h_HP[n-k];
+		}
+	}
+}
+
+void Convolution(uint32_t trim, double* a, uint32_t N_a, double* b, uint32_t N_b, double* Result)
 {
 	//Result[N_a+N_b-1];
 	uint32_t n;
 	for (n=(0)+trim;n<(N_a+N_b-1)-trim;n++)
 	{
-		uint32_t kmin, kmax, k;
+		double kmin, kmax, k;
 
 		*((double*)(Result+n)) = 0;
 
@@ -580,7 +678,7 @@ void Convolution(int trim, double* a, int N_a, double* b, int N_b, double* Resul
 
 		for(k=kmin;k<=kmax;k++)
 		{
-			*((double*)(Result+n))=*((double*)(a+n)) * (*(double*)(b+(n-k)));
+			//*((double*)(Result+n))=*((double*)(a+n)) * (*(double*)(b+(n-k)));
 		}
 	}
 }
