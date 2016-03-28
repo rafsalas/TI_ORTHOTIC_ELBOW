@@ -33,7 +33,6 @@ void gpio_isr4(void)
 
 //    status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P4);
 //    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P4, status);
-    printf(EUSCI_A0_MODULE,"\r\n\r\n");
     if(val[0]==val[1]==val[2] ){ //one step CW
 		printf(EUSCI_A0_MODULE,"in neg\r\n");
 		raw_position++;

@@ -24,7 +24,6 @@ uint16_t msp_clk_rate;//48Mhz
 uint16_t ads_clk_rate;//2.048 MHz
 
 // FLAGS
-extern uint8_t SPI_Rate_Flag; // Flag for SPI Sample Rate
 extern uint8_t Drdy; //Flag for SPI
 extern uint8_t SPI_Cleared; // Flag to Wait Until Channel Clears
 extern uint8_t SPI_Connected; //Flag for SPI Initialize Complete
@@ -58,8 +57,11 @@ int32_t twos_to_signed (uint32_t msb, uint32_t mid, uint32_t lsb);
 
 // CONVOLUTION COMPUTATION
 // Trim Unstable + Irrelevant Edges
-void Convolution(uint32_t trim, double* a, uint32_t N_a, double* b, uint32_t N_b, double* p);
 void Convolution2();
+void Convolution(uint32_t trim, double* a, uint32_t N_a, double* b, uint32_t N_b, double* p);
+
+//Compare between the two tricep and bicep
+void Comparator();
 
 
 #endif /* SPI_COMMS_H_ */
