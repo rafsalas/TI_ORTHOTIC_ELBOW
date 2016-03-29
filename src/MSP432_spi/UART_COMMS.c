@@ -57,11 +57,11 @@ void euscia0_isr(void)
     {
         RXData = MAP_UART_receiveData(EUSCI_A0_MODULE);
 
-       /* if(RXData != TXData)              // Check value
+        if(RXData == 'a')              // Check value
         {
             MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
             while(1);                       // Trap CPU
-        }*/
+        }
         //TXData++;
         MAP_Interrupt_disableSleepOnIsrExit();
     }

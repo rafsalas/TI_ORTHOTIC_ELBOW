@@ -191,6 +191,7 @@ void main(void)
     	_delay_cycles(10000);
     	clk = CS_getMCLK();
     	aux = CS_getSMCLK();
+
     	char c = 'g';
     	//MAP_UART_transmitData(EUSCI_A0_MODULE, c);
     	//printf(EUSCI_A0_MODULE,"rsult\n\r");
