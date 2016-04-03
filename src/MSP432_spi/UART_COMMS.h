@@ -11,6 +11,7 @@
 #include <driverlib.h>
 #include "printf.h"
 
+extern uint8_t Cal_Request;
 
 void uart_setup();
 
