@@ -1,9 +1,9 @@
-/*
- * SPI_COMMS.h
- *
- *  Created on: Feb 17, 2016
- *      Author: rafael
- */
+// SPI_COMMS.h
+
+// Elbow Orthosis
+// Texas A&M University & Texas Instruments
+// Fall 2015 - Spring 2016
+// Authors: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
 
 #ifndef SPI_COMMS_H_
 #define SPI_COMMS_H_
@@ -56,9 +56,7 @@ void EMG_Condition_Data();
 int32_t twos_to_signed (uint32_t msb, uint32_t mid, uint32_t lsb);
 
 // CONVOLUTION COMPUTATION
-// Trim Unstable + Irrelevant Edges
-void Convolution2();
-void Convolution(uint32_t trim, double* a, uint32_t N_a, double* b, uint32_t N_b, double* p);
+void Convolution();
 
 //Compare between the two tricep and bicep
 void Comparator();
