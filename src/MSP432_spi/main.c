@@ -1,9 +1,10 @@
-/***************************************************************************************
- * MAIN
- *
- *  Created on: Dec, 2015
- *      Author: rafael
-***************************************************************************************/
+// MAIN
+
+// Elbow Orthosis
+// Texas A&M University & Texas Instruments
+// Fall 2015 - Spring 2016
+// Authors: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
+
 //1.1,1.2,1.3,1.5,1.6,1.7
 //2.4,2.5
 //3.2,3.3,3.5
@@ -31,12 +32,15 @@
 ///////////////////////////
 // MAIN ROUTINE
 ///////////////////////////
+
+// SPI     -> EMG Voltage -> EMG Coefficient
+// ADC POT -> Angle       -> Dampen Coefficient
+// ADC FSR -> Pressure    -> Safty Threshold Emergency Stop
+// MOTOR   -> PWM Duty Cycle * (EMG) * (DAMP)
+
 uint8_t Main_Routine_Rate_Flag = 0x00; // Flag for Main Routine Interrupt
 
 
-///////////////////////////
-// BODY-TO-SENSOR INTERFACE
-///////////////////////////
 // SPI
 
 uint8_t Drdy = 0x00; //Flag for DRDY on SPI Channel
@@ -50,6 +54,19 @@ double EMG[8][50]; // 8 Channel History (Filtered, Rectified, Averaged)
 double EMG_max[8]; // Maximum EMG Signal
 double EMG_min[8];// = {100, 100, 100, 100, 100, 100, 100, 100}; // Minimum EMG Signal
 double EMG_min_i[8];// = {51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51}; // Minimum EMG Signal Index
+
+// ANGLE
+double ANGLE_deg[50]; // 50 Samples of Angle History
+double ANGLE_max; // Maximum Permitted Angle from Calibration Routine
+double ANGLE_min; // Minimum Permitted Angle from Calibration Routine
+int8_t ANGLE_dir; // + if Elbow Opening, - if Elbow Closing
+double ANGLE_damp; // Dampening Coefficient
+
+
+// MOTOR
+double MOTOR[50]; // 50 Samples of Motor Control History
+
+
 
 //////
 // END
@@ -96,6 +113,7 @@ volatile uint32_t aux = 0;
 
 void main(void)
 {
+	int i, j;
 	MAP_WDT_A_holdTimer();
 
 	// INITIALIZATION
@@ -117,6 +135,7 @@ void main(void)
 		// MOTOR SETUP
 			//setup_Motor_Driver();
 
+
 	/*while(1){
 		__delay_cycles(100);
 
@@ -134,6 +153,7 @@ void main(void)
 	}*/
 
 
+
 	// LOOP
 	setup_adc();
     while(1){
@@ -148,24 +168,82 @@ void main(void)
         d = resultsBuffer[3];*/
 
 /*
+		///////////////////////////////////////////////////////////////////////
 		// SPI Read
-		SPI_Collect_Data();
+		///////////////////////////////////////////////////////////////////////
+		// Read from ADS1299 through SPI Channel
+		// INPUT: 216 Bit Stream, 9 24 Bit Channels
+		// INTERFACES: MSB|MID|LSB -> 2's Complement
+		// OUTPUT: ADC Data
+		///////////////////////////////////////////////////////////////////////
+			MAP_Interrupt_enableInterrupt(INT_TA3_N);
+			SPI_Collect_Data();
+			MAP_Interrupt_disableInterrupt(INT_TA3_N);
+
+		///////////////////////////////////////////////////////////////////////
 		// Condition EMG Data
-		EMG_Condition_Data();
+		///////////////////////////////////////////////////////////////////////
+		// High Pass Filter, Rectification, and Dynamic Normalization
+		// INPUT: Raw ADC Data (+/- 24 Bit) (2's Complemented)
+		//     -- EMG_max[CHANNEL], EMG_min[CHANNEL]
+		// INTERNAL: Raw ADC -> Voltage -> Filter -> Rectify -> Average -> Normalize
+		// OUTPUT: EMG Coefficient
+		//     -- EMG[CHANNEL][0]
+		///////////////////////////////////////////////////////////////////////
+			EMG_Condition_Data();
 
-		//Read Pot(output angle value
+		///////////////////////////////////////////////////////////////////////
+		// Read Potentiometer
+		///////////////////////////////////////////////////////////////////////
+		// Reads ADC Value for Potentiometer
+		// INPUT: ADC Data (14 Bit)
+		// INTERNAL:
+		// OUTPUT: Angle
+		//      -- ANGLE_deg[0])
+		///////////////////////////////////////////////////////////////////////
+			David_Likes_Ponies();
 
-		//Normalize pot coefficient
+		///////////////////////////////////////////////////////////////////////
+		// Angle Limit Dampening
+		///////////////////////////////////////////////////////////////////////
+		// Dampens EMG Coefficient based on Current Angle State
+		// INPUT: Potentiometer Angle (0*,180*)
+		//     -- ANGLE_deg[0], ANGLE_max, ANGLE_min, ANGLE_dir
+		// INTERFACES: Angle, Direction -> Transfer Function Lookup Table
+		// OUTPUT: Damper Coefficient
+		//      -- ANGLE_damp
+		///////////////////////////////////////////////////////////////////////
+			Angle_Dampen();
 
-		//direction comparator(outputs direction coefficient)
+		///////////////////////////////////////////////////////////////////////
+		// Direction Comparator
+		///////////////////////////////////////////////////////////////////////
+		// Multiplexes Counteracting EMG Signals
+		// INPUT:
+		//     --
+		// INTERFACES:
+		// OUTPUT:
+		//      -- DIR_COMP
+		///////////////////////////////////////////////////////////////////////
+			Direction_Compare();
 
 		//Read FSR(get adc value)
 
 		//threshold determination
 
-		//Motor coeficient multiplication(also check calibration values here)
+		// Coefficient Multiplication
+			MOTOR[0]=PWM_max*(EMG_norm[0]*DAMP_norm[0])*(DIR_COMP);
 
 		//actuate motor
+
+
+		// HISTORY BUFFER (QUEUE)
+			// EMG History Buffer
+			for(i=0;j<8;j++) for(j=EMG_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
+			// ANGLE History Buffer
+			for(i=ANGLE_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
+			// MOTOR History Buffer
+			for(i=MOTOR_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
 */
     }
 

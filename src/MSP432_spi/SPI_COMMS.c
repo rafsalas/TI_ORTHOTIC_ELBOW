@@ -1,12 +1,13 @@
-/*
- * SPI_COMMS.c
- *
- *  Created on: Feb 17, 2016
- *      Author: rafael
- */
+// SPI_COMMS.c
+
+// Elbow Orthosis
+// Texas A&M University & Texas Instruments
+// Fall 2015 - Spring 2016
+// Authors: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
 
 #include "SPI_COMMS.h"
 
+// ADS1299 REGISTER SETTINGS
 volatile uint16_t ID_reg = 0;
 volatile uint16_t CONFIG1_reg = 0;
 volatile uint16_t CONFIG2_reg = 0;
@@ -33,10 +34,6 @@ volatile uint16_t GPIO_reg = 0;
 volatile uint16_t MISC1_reg = 0;
 volatile uint16_t MISC2_reg = 0;
 
-volatile double HP_Data[8][50] = {0};
-volatile double BS_Data[8][50] = {0};
-volatile double AVG_Data[8][50] = {0};
-volatile double Check_Data = 0;
 
 // SPI DATA
 uint8_t SPI_Raw_Data[54]; // 54 Packets * 8 Bits per Packet = 216 Bits
@@ -127,14 +124,15 @@ void spi_start(int32_t sample[50]){
 
 	// WRITE REGISTERS
 	spi_write_registers();
-	spi_write_registers();
 
 	// READ REGISTERS
 	spi_read_registers();
 
+	//spi_register_setting();
+
 	// START COMMAND
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x08); //START
-	__delay_cycles(5000);
+	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x08); //START
+	//__delay_cycles(5000);
 
 	// READ DATA CONTINUOUSLY
 	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x10); // RDATAC
@@ -247,8 +245,8 @@ void spi_register_setting(){
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x08); //START
 //	__delay_cycles(960);
 	__delay_cycles(5000);
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x10); // read data cont
-	__delay_cycles(5000);
+	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x10); // read data cont
+	//__delay_cycles(5000);
 }
 
 void spi_write_registers(){
@@ -258,7 +256,6 @@ void spi_write_registers(){
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x11); //SDATAC
 	__delay_cycles(100);
 
-
 	// ID Register
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x40); // Write Starting at ID Address
 	__delay_cycles(1000);
@@ -266,9 +263,10 @@ void spi_write_registers(){
 	__delay_cycles(1000);
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x3E); // ID Register
 	__delay_cycles(1000);
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x96); // CONFIG1 Register (DR 250 Hz)
+	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x96); // CONFIG1 Register (DR 250 Hz)
 	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x95); // CONFIG1 Register (DR 500 Hz)
 	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x94); // CONFIG1 Register (DR 1000 Hz)
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x93); // CONFIG1 Register (DR 2000 Hz)
 	__delay_cycles(1000);
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0xC0); // CONFIG2 Register
 	__delay_cycles(1000);
@@ -473,128 +471,125 @@ void drdy_setup(){
 void SPI_Collect_Data(void)
 {
 	int win_i,i;
-	uint32_t container[3];
+
+	uint8_t lsb;
+	uint8_t mid;
+	uint8_t msb;
+
 	uint32_t container_1;
 	int32_t container_2;
+	uint8_t buffer_unempty;
 
 
 	if(SPI_Connected)
 	{
 
 		MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x08); //START
-		__delay_cycles(5000);
-
-		// READ DATA BY COMMAND
-		EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x12; // RDATAC
-		__delay_cycles(100); // SPI Delay
+		__delay_cycles(100);
 
 		for(win_i=0;win_i<N_WIN;win_i++)
 		{
-
 			// DELAY IF DRDY NOT READY
-			//Drdy = GPIO_getInputPinValue(GPIO_PORT_P3,GPIO_PIN5);
-			//while(Drdy!=0) Drdy = GPIO_getInputPinValue(GPIO_PORT_P3,GPIO_PIN5);
-			//__delay_cycles(100); // SPI Delay
+			Drdy = GPIO_getInputPinValue(GPIO_PORT_P3,GPIO_PIN5);
+			while(Drdy!=0)
+			{
+				if(buffer_unempty)
+				{
+					__delay_cycles(80); // SPI Delay
+					EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00; // Clear Buffer
+					__delay_cycles(80); // SPI Delay
+					buffer_unempty = EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r;
+				}
 
 
+				Drdy = GPIO_getInputPinValue(GPIO_PORT_P3,GPIO_PIN5); // Check DRDY Pin
+			}
 
-			while(Drdy!=0);
+			msb=0;
+			while(msb!=0xC0 || mid!=0x00 || lsb!=0x00)
+			{
+				// READ DATA BY COMMAND
+				__delay_cycles(80); // SPI Delay
+				EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x12; // RDATAC
+				__delay_cycles(80); // SPI Delay
 
 
-			// READ DATA BY COMMAND
-			EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x12; // RDATAC
-			__delay_cycles(100); // SPI Delay
+				// Routine Must Issue 24 + CHANNELS*24 SCLK Signals (216 Clock Signals)
 
-			// Issue 24+CHANNELS*24 SCLK Signals (216 Clock Signals)
+				// VERIFY DATA WITH STATUS HEADER
+				EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
+				__delay_cycles(80); // SPI Delay
+				msb=EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r; // 0xC0 Expected
+				__delay_cycles(80); // SPI Delay
 
-			// IGNORE FIRST 3 BYTES
-			EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
-			__delay_cycles(100); // SPI Delay
-	    	if((EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r)==0xC0)
+				EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
+				__delay_cycles(80); // SPI Delay
+				mid=EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r; // 0x00 Expected
+				__delay_cycles(80); // SPI Delay
+
+				EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
+				__delay_cycles(80); // SPI Delay
+				lsb=EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r; //0x00 Expected
+				__delay_cycles(80); // SPI Delay
+			}
+
+	    	if(msb==0xC0 && mid==0x00 && lsb==0x00)
 	    	{
-
-
-				EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
-				__delay_cycles(100); // SPI Delay
-
-				EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
-				__delay_cycles(100); // SPI Delay
 
 				// PROMPT DATA STREAM
 				//for(i=0;i<NUM_ACTIVE_CHANNELS;i++)
 				for(i=0;i<NUM_CHANNELS;i++)
 
 				{
-					EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
-					__delay_cycles(100); // SPI Delay
-
-					container[0]= EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r;
-					__delay_cycles(100); // SPI Delay
-
 
 					EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
-					__delay_cycles(100); // SPI Delay
-
-					container[1]= EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r;
-					__delay_cycles(100); // SPI Delay
+					__delay_cycles(80); // SPI Delay
+					msb = EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r;
+					__delay_cycles(80); // SPI Delay
 
 
 					EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
-					__delay_cycles(100); // SPI Delay
+					__delay_cycles(80); // SPI Delay
+					mid = EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r;
+					__delay_cycles(80); // SPI Delay
 
-					container[2]= EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r;
-					__delay_cycles(100); // SPI Delay
+					EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
+					__delay_cycles(80); // SPI Delay
+					lsb = EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r;
+					__delay_cycles(80); // SPI Delay
 
 
-					// Concatenate and 2's Complement
-					container_1 = (container[0]<<16)|(container[1]<<8)|(container[2]);
+					// Concatenate
+					container_1=(msb<<16)|(mid<<8)|(lsb);
 
+					// 2's Complement
 					if((container_1>>23)%2==1) container_2=-((1<<24)-container_1);
 					else container_2=container_1;
 
 					SPI_Data_Window[i][win_i]=container_2;
-
-
-
 				}
 
-
-	/*
-				// IGNORE REMAINING DATA
-				for(i=NUM_ACTIVE_CHANNELS;i<NUM_CHANNELS;i++)
-				{
-					EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
-					__delay_cycles(100); // SPI Delay
-
-					EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
-					__delay_cycles(100); // SPI Delay
-
-					EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
-					__delay_cycles(100); // SPI Delay
-				}
-	*/
+				// CHECK BUFFER
+				__delay_cycles(80); // SPI Delay
+				EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00; // Clear Buffer
+				__delay_cycles(80); // SPI Delay
+				buffer_unempty = EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r;
+				if(buffer_unempty) win_i=win_i-1; // Invalidate Data of Buffer Not Empty
 
 			}
-	    	else if(win_i>0)
-	    	{
-				for(i=0;i<NUM_CHANNELS;i++)
-				{
-					SPI_Data_Window[i][win_i]=SPI_Data_Window[i][win_i-1];
-				}
 
-	    	}
 
 		}
 	    // STOP SPI CHANNEL
 		EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x0A; // STOP DATA Conversion
-
+		__delay_cycles(10000); // SPI Delay
+		//__delay_cycles(1000000); // SPI Delay
 	}
 }
 
 void EMG_Condition_Data(void)
 {
 	int i,j;
-	double *p = malloc(N_WIN+N_FIR_HP-1);
 	double sum = 0;
 	double average;
 
@@ -607,9 +602,9 @@ void EMG_Condition_Data(void)
 		}
 
 		// Convolution
-		//Convolution(N_FIR_HP,EMG_Voltage_Window,N_WIN,h_HP,N_FIR_HP,p);
-		Convolution2();
+		Convolution();
 
+		sum = 0;
 		for(j=N_FIR_HP;j<N_WIN-1;j++)
 		{
 			//EMG[i][j]=EMG_Convolution[i]
@@ -625,19 +620,17 @@ void EMG_Condition_Data(void)
 		if(average<EMG_min[i] || EMG_min[i]==0) EMG_min[i]=average;
 
 		// EMG History Buffer
-		for(j=EMG_History-1;j>0;j--)
-		{
-			EMG[i][j]=EMG[i][j-1];
-		}
+		//for(j=EMG_History-1;j>0;j--)
+		//{
+		//	EMG[i][j]=EMG[i][j-1];
+		//}
 
 		EMG[i][0]=(average-EMG_min[i])/(EMG_max[i]-EMG_min[i]);
-
-		//EMG[i][0]=average;
 	}
 
 }
 
-void Convolution2()
+void Convolution()
 {
 	//Result[N_a+N_b-1];
 	int n;
@@ -660,28 +653,7 @@ void Convolution2()
 	}
 }
 
-void Convolution(uint32_t trim, double* a, uint32_t N_a, double* b, uint32_t N_b, double* Result)
-{
-	//Result[N_a+N_b-1];
-	uint32_t n;
-	for (n=(0)+trim;n<(N_a+N_b-1)-trim;n++)
-	{
-		double kmin, kmax, k;
 
-		*((double*)(Result+n)) = 0;
-
-		if(n>=N_b-1) kmin=n-(N_b-1);
-		else kmin=0;
-
-		if(n<N_a-1) kmax=n;
-		else kmax=N_a-1;
-
-		for(k=kmin;k<=kmax;k++)
-		{
-			//*((double*)(Result+n))=*((double*)(a+n)) * (*(double*)(b+(n-k)));
-		}
-	}
-}
 
 
 //----------------------interrupts----------------------------------------------------------------------
