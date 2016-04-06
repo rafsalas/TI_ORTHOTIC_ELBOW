@@ -47,6 +47,7 @@ uint8_t Drdy = 0x00; //Flag for DRDY on SPI Channel
 uint8_t SPI_Cleared = 1; // Flag to Wait Until SPI Channel Clears
 uint8_t SPI_Connected = 0; // Flag to Wait Until SPI Initialiation Complete
 uint8_t Cal_Request = 0;
+uint8_t Read_flag = 0;
 // EMG
 double EMG[8][50]; // 8 Channel History (Filtered, Rectified, Averaged)
 
@@ -76,8 +77,9 @@ double MOTOR[50]; // 50 Samples of Motor Control History
 static uint16_t resultsBuffer[4];// used for ADC
 volatile uint16_t a,b,c,d =0; //used for adc testing
 
-void timersetup(){
 
+
+void timersetup(){
 	const Timer_A_ContinuousModeConfig continuousModeConfig =
 	{
 	        TIMER_A_CLOCKSOURCE_ACLK,           // ACLK Clock Source
@@ -132,6 +134,9 @@ void main(void)
 		// UART
 			uart_setup();
 
+		// ADC
+			//setup_adc();
+
 		// MOTOR SETUP
 			//setup_Motor_Driver();
 
@@ -152,20 +157,18 @@ void main(void)
 
 	}*/
 
-
-
+	MAP_UART_transmitData(EUSCI_A2_MODULE, '1');
+	MAP_UART_transmitData(EUSCI_A2_MODULE, '2');
+	MAP_UART_transmitData(EUSCI_A2_MODULE, '3');
+	MAP_UART_transmitData(EUSCI_A2_MODULE, '4');
+	MAP_UART_transmitData(EUSCI_A2_MODULE, '5');
 	// LOOP
-	setup_adc();
     while(1){
 
     	/*_delay_cycles(10000);
     	clk = CS_getMCLK();
     	aux = CS_getSMCLK();
-    	read_adc(resultsBuffer);
-        a = resultsBuffer[0];
-        b = resultsBuffer[1];
-        c = resultsBuffer[2];
-        d = resultsBuffer[3];*/
+    	 */
 
 /*
 		///////////////////////////////////////////////////////////////////////
@@ -193,7 +196,7 @@ void main(void)
 			EMG_Condition_Data();
 
 		///////////////////////////////////////////////////////////////////////
-		// Read Potentiometer
+		// Read Potentiometer and FSR
 		///////////////////////////////////////////////////////////////////////
 		// Reads ADC Value for Potentiometer
 		// INPUT: ADC Data (14 Bit)
@@ -201,7 +204,11 @@ void main(void)
 		// OUTPUT: Angle
 		//      -- ANGLE_deg[0])
 		///////////////////////////////////////////////////////////////////////
-			David_Likes_Ponies();
+			read_adc(resultsBuffer);
+        	ANGLE_deg[0] = resultsBuffer[0];//pin5.5, Pot
+        	b = resultsBuffer[1];//pin5.4 //ALTERNATE Pot
+        	c = resultsBuffer[2];//pin5.3//FSR
+        	d = resultsBuffer[3];//pin5.2//FSR
 
 		///////////////////////////////////////////////////////////////////////
 		// Angle Limit Dampening

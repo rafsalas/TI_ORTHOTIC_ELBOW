@@ -12,6 +12,7 @@
 #include "printf.h"
 
 extern uint8_t Cal_Request;
+extern uint8_t Read_flag;
 
 void uart_setup();
 
