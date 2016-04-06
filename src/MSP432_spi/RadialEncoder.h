@@ -21,7 +21,7 @@ extern double ANGLE_damp; // Dampening Coefficient
 extern int32_t raw_position;
 extern int32_t pos_pulse_count;
 extern int32_t neg_pulse_count;
-void encoderInit();
+
 void Angle_Dampen();
 
 

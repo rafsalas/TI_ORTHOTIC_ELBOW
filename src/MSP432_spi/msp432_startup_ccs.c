@@ -49,7 +49,6 @@ extern void _c_int00(void);
 extern void adc_isr(void);
 extern void gpio_isr5(void);
 extern void gpio_isr3(void);
-extern void gpio_isr4(void);
 extern void euscia2_isr(void);
 
 extern void SPI_DATA_RATE_ISR(void);
@@ -124,7 +123,7 @@ void (* const interruptVectors[])(void) =
 	defaultISR,                             /* PORT1 ISR                 */
     defaultISR,                             /* PORT2 ISR                 */
 	gpio_isr3,                             /* PORT3 ISR                 */
-    gpio_isr4,                             /* PORT4 ISR                 */
+	defaultISR,                             /* PORT4 ISR                 */
 	gpio_isr5,                             /* PORT5 ISR                 */
     defaultISR,                             /* PORT6 ISR                 */
     defaultISR,                             /* Reserved 41               */
