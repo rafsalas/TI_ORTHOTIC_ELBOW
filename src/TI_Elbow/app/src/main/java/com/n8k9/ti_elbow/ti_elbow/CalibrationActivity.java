@@ -217,11 +217,11 @@ public class CalibrationActivity extends Activity {
             try
             {
                 // For Writing
-                String string_LowerLimit = Integer.toString(LowerLimit);
-                String string_UpperLimit = Integer.toString(UpperLimit);
-                String string_Transmit = string_LowerLimit + "  " + string_UpperLimit;
+                String string_LowerLimit = String.format("%03",LowerLimit);
+                String string_UpperLimit = String.format("%03",UpperLimit);
+                String string_Transmit = string_LowerLimit + string_UpperLimit;
                 btSocket.getOutputStream().write(string_Transmit.toString().getBytes());
-                msg("Sent: "+string_Transmit);
+                msg("Sent: "+string_LowerLimit+"  "+string_UpperLimit);
 
 
                 timer_sequence();
