@@ -44,7 +44,7 @@ double SPI_Data_Window[8][100]; // 8 Channels, 100 Sample Window
 // EMG DATA
 uint32_t EMG_i; // EMG Sample Number
 double EMG_Voltage_Window[100]; // Raw Data / ADC Resolution
-const double ADS1299_Resolution = 0x1000000; // 24-Bit Resolution
+const double ADS1299_Resolution = 0x800000;//0x1000000; // 24-Bit Resolution
 double EMG_Convolution[100+11-1]; // Convolution Result
 
 
@@ -263,18 +263,20 @@ void spi_write_registers(){
 	__delay_cycles(1000);
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x3E); // ID Register
 	__delay_cycles(1000);
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x96); // CONFIG1 Register (DR 250 Hz)
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x96); // CONFIG1 Register (DR 250 Hz)
 	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x95); // CONFIG1 Register (DR 500 Hz)
 	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x94); // CONFIG1 Register (DR 1000 Hz)
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x93); // CONFIG1 Register (DR 2000 Hz)
+	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x93); // CONFIG1 Register (DR 2000 Hz)
 	__delay_cycles(1000);
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0xC0); // CONFIG2 Register
+	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0xD0); // Square Wave Test Signal
 	__delay_cycles(1000);
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x60); // CONFIG3 Register
 	__delay_cycles(1000);
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); // LOFF Register
 	__delay_cycles(1000);
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x61); // CH1SET Register
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); // CH1SET Register
+	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x05); // Square Wave Test Signal
 	__delay_cycles(1000);
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x61); // CH2SET Register
 	__delay_cycles(1000);
@@ -472,27 +474,36 @@ void SPI_Collect_Data(void)
 {
 	int win_i,i;
 
-	uint8_t lsb;
-	uint8_t mid;
-	uint8_t msb;
+	uint32_t lsb;
+	uint32_t mid;
+	uint32_t msb;
+
+	uint32_t stuck_i; // Stuck Counter
+	uint32_t stuck_i_max = 100;
+	uint8_t stuck; // Stuck Flag
 
 	uint32_t container_1;
 	int32_t container_2;
 	uint8_t buffer_unempty;
 
+	//
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x08); //START
+	//
 
 	if(SPI_Connected)
 	{
 
-		MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x08); //START
+		//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x08); //START
 		__delay_cycles(100);
 
 		for(win_i=0;win_i<N_WIN;win_i++)
 		{
+			stuck_i=0;
 			// DELAY IF DRDY NOT READY
 			Drdy = GPIO_getInputPinValue(GPIO_PORT_P3,GPIO_PIN5);
 			while(Drdy!=0)
 			{
+
 				if(buffer_unempty)
 				{
 					__delay_cycles(80); // SPI Delay
@@ -503,10 +514,11 @@ void SPI_Collect_Data(void)
 
 
 				Drdy = GPIO_getInputPinValue(GPIO_PORT_P3,GPIO_PIN5); // Check DRDY Pin
+
 			}
 
 			msb=0;
-			while(msb!=0xC0 || mid!=0x00 || lsb!=0x00)
+			while((msb!=0xC0 || mid!=0x00 || lsb!=0x00) && stuck_i<stuck_i_max)
 			{
 				// READ DATA BY COMMAND
 				__delay_cycles(80); // SPI Delay
@@ -531,9 +543,12 @@ void SPI_Collect_Data(void)
 				__delay_cycles(80); // SPI Delay
 				lsb=EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r; //0x00 Expected
 				__delay_cycles(80); // SPI Delay
+
+				stuck_i=stuck_i+1; // Detect if Stuck in Loop
 			}
 
-	    	if(msb==0xC0 && mid==0x00 && lsb==0x00)
+			stuck=0;
+	    	if((msb==0xC0 && mid==0x00 && lsb==0x00) && stuck_i<stuck_i_max)
 	    	{
 
 				// PROMPT DATA STREAM
@@ -574,14 +589,23 @@ void SPI_Collect_Data(void)
 				EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00; // Clear Buffer
 				__delay_cycles(80); // SPI Delay
 				buffer_unempty = EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r;
-				if(buffer_unempty) win_i=win_i-1; // Invalidate Data of Buffer Not Empty
+				if(buffer_unempty) win_i=win_i-1; // Invalidate Data if Buffer Not Empty
 
 			}
+			if(stuck_i>stuck_i_max)
+			{
+				win_i=win_i-1; // Invalidate Data if Stuck
+				MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x08); //START
+			}
+
+			__delay_cycles(100); // SPI Delay
 
 
 		}
 	    // STOP SPI CHANNEL
-		EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x0A; // STOP DATA Conversion
+		//
+		//EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x0A; // STOP DATA Conversion
+		//
 		__delay_cycles(10000); // SPI Delay
 		//__delay_cycles(1000000); // SPI Delay
 	}
@@ -620,10 +644,10 @@ void EMG_Condition_Data(void)
 		if(average<EMG_min[i] || EMG_min[i]==0) EMG_min[i]=average;
 
 		// EMG History Buffer
-		//for(j=EMG_History-1;j>0;j--)
-		//{
-		//	EMG[i][j]=EMG[i][j-1];
-		//}
+		for(j=EMG_History-1;j>0;j--)
+		{
+			EMG[i][j]=EMG[i][j-1];
+		}
 
 		EMG[i][0]=(average-EMG_min[i])/(EMG_max[i]-EMG_min[i]);
 	}
