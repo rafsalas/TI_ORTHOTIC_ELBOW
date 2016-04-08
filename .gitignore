@@ -9,7 +9,6 @@
 *.opt
 *.map
 *.out
-*.xml
 *.ccsproject
 *.cproject
 *.project
