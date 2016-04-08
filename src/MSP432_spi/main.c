@@ -119,7 +119,8 @@ void main(void)
 	MAP_WDT_A_holdTimer();
 
 	// INITIALIZATION
-
+	MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
+	CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
 
 		// BLUETOOTH ROUTINE
 			//Bluetooth
@@ -127,12 +128,12 @@ void main(void)
 
 
 		// SPI SETUP
-			//spi_setup();
-			//spi_start();
-			//drdy_setup();
+			spi_setup();
+			spi_start();
+			drdy_setup();
 
 		// UART
-			uart_setup();
+			//uart_setup();
 
 		// ADC
 			//setup_adc();
@@ -157,11 +158,16 @@ void main(void)
 
 	}*/
 
-	MAP_UART_transmitData(EUSCI_A2_MODULE, '1');
-	MAP_UART_transmitData(EUSCI_A2_MODULE, '2');
-	MAP_UART_transmitData(EUSCI_A2_MODULE, '3');
-	MAP_UART_transmitData(EUSCI_A2_MODULE, '4');
-	MAP_UART_transmitData(EUSCI_A2_MODULE, '5');
+
+	//MAP_UART_transmitData(EUSCI_A2_MODULE, '1');
+	//MAP_UART_transmitData(EUSCI_A2_MODULE, '2');
+	//MAP_UART_transmitData(EUSCI_A2_MODULE, '3');
+	//MAP_UART_transmitData(EUSCI_A2_MODULE, '4');
+	//MAP_UART_transmitData(EUSCI_A2_MODULE, '5');
+
+	//MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
+	//CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
+
 	// LOOP
     while(1){
 
@@ -169,6 +175,18 @@ void main(void)
     	clk = CS_getMCLK();
     	aux = CS_getSMCLK();
     	 */
+
+		__delay_cycles(100);
+
+
+		MAP_Interrupt_enableInterrupt(INT_TA3_N);
+
+		SPI_Collect_Data();
+
+		MAP_Interrupt_disableInterrupt(INT_TA3_N);
+
+		EMG_Condition_Data();
+
 
 /*
 		///////////////////////////////////////////////////////////////////////
@@ -253,6 +271,7 @@ void main(void)
 			for(i=MOTOR_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
 */
     }
+
 
 }
 //-----------------------------------------------Interrupts
