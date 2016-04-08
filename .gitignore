@@ -1,7 +1,6 @@
 *.launch
 *.prefs
 *.
-*.x*
 *.hex
 *.pp
 *.obj
