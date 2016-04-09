@@ -15,6 +15,6 @@ extern uint8_t Cal_Request;
 extern uint8_t Read_flag;
 
 void uart_setup();
-
+int *read_cal_angles();
 
 #endif /* UART_COMMS_H_ */

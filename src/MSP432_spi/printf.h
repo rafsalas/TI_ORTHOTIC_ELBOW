@@ -11,6 +11,6 @@
 #define PRINTF_H_
 #include <driverlib.h>
 
-void printf(uint32_t moduleInstance, char *, ...);
+void print_f(uint32_t moduleInstance, char *, ...);
 
 #endif /* PRINTF_H_ */
