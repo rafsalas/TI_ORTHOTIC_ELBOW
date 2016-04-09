@@ -49,6 +49,7 @@ uint8_t SPI_Connected = 0; // Flag to Wait Until SPI Initialiation Complete
 uint8_t Cal_Request = 0;
 uint8_t Read_flag = 0;
 uint16_t Calibration_History = 100;
+
 // EMG
 double EMG[8][50]; // 8 Channel History (Filtered, Rectified, Averaged)
 
@@ -67,9 +68,9 @@ double ANGLE_damp; // Dampening Coefficient
 
 // MOTOR
 double MOTOR[50]; // 50 Samples of Motor Control History
-
-
-
+double Upper_Arm_Intention=0;
+double Lower_Arm_Intention=0;
+double Direction_flag = 0;
 //////
 // END
 //////

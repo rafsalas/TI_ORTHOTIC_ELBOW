@@ -682,7 +682,29 @@ void Convolution()
 }
 
 
+void Comparator(){
+	//comparing bicep and tricep/wrist stuffs intention
+	if(EMG[0][0] > EMG[1][0]){ //bicep intention decrease angle
+		Upper_Arm_Intention = EMG[0][0];
+		Direction_flag = 1;
+	}else if(EMG[0][0] < EMG[1][0]){//tricep intention increase angle
+		Upper_Arm_Intention = EMG[1][0];
+		Direction_flag = 0;
+	}else{
+		Upper_Arm_Intention = 0;
+		Direction_flag = -1;
+	}
 
+	/*
+	if(EMG[2][0] > EMG[3][0]){ //forearm top intention
+		Lower_Arm_Intention = EMG[2][0];
+	}else if(EMG[2][0] < EMG[3][0]){//forearm bottom intention
+		Lower_Arm_Intention = EMG[3][0];
+	}else{
+		Lower_Arm_Intention = 0;
+	}*/
+
+}
 
 //----------------------interrupts----------------------------------------------------------------------
 
