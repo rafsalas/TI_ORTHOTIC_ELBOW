@@ -48,6 +48,7 @@ uint8_t SPI_Cleared = 1; // Flag to Wait Until SPI Channel Clears
 uint8_t SPI_Connected = 0; // Flag to Wait Until SPI Initialiation Complete
 uint8_t Cal_Request = 0;
 uint8_t Read_flag = 0;
+uint16_t Calibration_History = 100;
 // EMG
 double EMG[8][50]; // 8 Channel History (Filtered, Rectified, Averaged)
 
@@ -292,7 +293,7 @@ void adc_isr(void)
         MAP_ADC14_getMultiSequenceResult(resultsBuffer);
         a = resultsBuffer[0];
         b = resultsBuffer[1];
-        printf(EUSCI_A2_MODULE,"result1: %i result1: %i",a,b );
+        print_f(EUSCI_A2_MODULE,"result1: %i result1: %i",a,b );
     }
 }
 

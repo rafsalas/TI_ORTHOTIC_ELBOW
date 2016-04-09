@@ -639,7 +639,7 @@ void EMG_Condition_Data(void)
 		average = sum/(N_WIN-N_FIR_HP); // Average Middle of Convolution
 
 
-		if(average>EMG_max[i] || EMG_max[i]==0) EMG_max[i]=average;
+		//if(average>EMG_max[i] || EMG_max[i]==0) EMG_max[i]=average;
 
 		if(average<EMG_min[i] || EMG_min[i]==0) EMG_min[i]=average;
 
@@ -650,6 +650,10 @@ void EMG_Condition_Data(void)
 		}
 
 		EMG[i][0]=(average-EMG_min[i])/(EMG_max[i]-EMG_min[i]);
+
+		if(EMG[i][0] >= 1){
+			EMG[i][0] = 1;
+		}
 	}
 
 }
