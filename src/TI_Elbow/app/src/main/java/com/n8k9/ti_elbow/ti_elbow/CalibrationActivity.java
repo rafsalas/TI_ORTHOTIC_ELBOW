@@ -67,6 +67,7 @@ public class CalibrationActivity extends Activity {
         setContentView(R.layout.calibration_activity);
 
 
+
         // Setup RangeSeekBar
         //RangeSeekBar<Integer> rangeSeekBar = new RangeSeekBar<Integer>(this);
         rangeSeekBar = new RangeSeekBar<Integer>(this);
@@ -107,7 +108,7 @@ public class CalibrationActivity extends Activity {
         // Initialize Vibration
         v = (Vibrator) this.getSystemService(Context.VIBRATOR_SERVICE);
 
-        //new ConnectBT().execute(); //Call the class to connect
+        new ConnectBT().execute(); //Call the class to connect
 
 
         // Angle Limit Commands
@@ -210,28 +211,30 @@ public class CalibrationActivity extends Activity {
 
     private void Transmit()
     {
-        timer_sequence();
-        /*
+//        timer_sequence();
+
         if (btSocket!=null)
         {
             try
             {
                 // For Writing
-                String string_LowerLimit = Integer.toString(LowerLimit);
-                String string_UpperLimit = Integer.toString(UpperLimit);
-                String string_Transmit = string_LowerLimit + "  " + string_UpperLimit;
+                LowerLimit=rangeSeekBar.getSelectedMinValue();
+                UpperLimit=rangeSeekBar.getSelectedMaxValue();
+
+                String string_LowerLimit = String.format("%03d",LowerLimit);
+                String string_UpperLimit = String.format("%03d",UpperLimit);
+                String string_Transmit = "a" + string_LowerLimit + string_UpperLimit + "q";//string_LowerLimit + string_UpperLimit;
                 btSocket.getOutputStream().write(string_Transmit.toString().getBytes());
-                msg("Sent: "+string_Transmit);
+                msg("Sent: "+string_LowerLimit+"  "+string_UpperLimit);
 
-
-                timer_sequence();
+               timer_sequence();
             }
             catch (IOException e)
             {
                 msg("Error");
             }
         }
-        */
+
     }
 
 
