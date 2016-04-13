@@ -686,13 +686,13 @@ void Comparator(){
 	//comparing bicep and tricep/wrist stuffs intention
 	if(EMG[0][0] > EMG[1][0]){ //bicep intention decrease angle
 		Upper_Arm_Intention = EMG[0][0];
-		Direction_flag = 1;
+		Direction_flag = -1;
 	}else if(EMG[0][0] < EMG[1][0]){//tricep intention increase angle
 		Upper_Arm_Intention = EMG[1][0];
-		Direction_flag = 0;
+		Direction_flag = 1;
 	}else{
 		Upper_Arm_Intention = 0;
-		Direction_flag = -1;
+		Direction_flag = 0;
 	}
 
 	/*

@@ -29,7 +29,7 @@ extern uint8_t SPI_Cleared; // Flag to Wait Until Channel Clears
 extern uint8_t SPI_Connected; //Flag for SPI Initialize Complete
 extern double Upper_Arm_Intention;//used for motor
 extern double Lower_Arm_Intention;//used for motor
-extern double Direction_flag;//used for motor
+extern int8_t Direction_flag;//used for motor
 
 
 // EMG DATA

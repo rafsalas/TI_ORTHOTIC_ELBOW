@@ -26,6 +26,7 @@
 #include "UART_COMMS.h"
 #include "drv8.h"
 #include "ADC_Sensors.h"
+#include "RadialEncoder.h"
 
 //-----------------------------------------------Variables
 
@@ -62,7 +63,7 @@ double EMG_min_i[8];// = {51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+5
 double ANGLE_deg[50]; // 50 Samples of Angle History
 double ANGLE_max; // Maximum Permitted Angle from Calibration Routine
 double ANGLE_min; // Minimum Permitted Angle from Calibration Routine
-int8_t ANGLE_dir; // + if Elbow Opening, - if Elbow Closing
+int8_t Direction_flag= 0; // + if Elbow Opening, - if Elbow Closing
 double ANGLE_damp; // Dampening Coefficient
 
 
@@ -70,7 +71,8 @@ double ANGLE_damp; // Dampening Coefficient
 double MOTOR[50]; // 50 Samples of Motor Control History
 double Upper_Arm_Intention=0;
 double Lower_Arm_Intention=0;
-double Direction_flag = 0;
+uint16_t PWM1 = 500;
+uint16_t PWM2 = 500;
 //////
 // END
 //////
@@ -112,8 +114,8 @@ void timersetup(){
     MAP_Timer_A_startCounter(TIMER_A3_MODULE, TIMER_A_CONTINUOUS_MODE);
 }
 
-volatile uint32_t clk = 0;
-volatile uint32_t aux = 0;
+volatile double clk = 0;
+volatile int32_t aux = 0;
 
 void main(void)
 {
@@ -130,15 +132,15 @@ void main(void)
 
 
 		// SPI SETUP
-			spi_setup();
-			spi_start();
-			drdy_setup();
+			//spi_setup();
+			//spi_start();
+			//drdy_setup();
 
 		// UART
 			//uart_setup();
 
 		// ADC
-			//setup_adc();
+			setup_adc();
 
 		// MOTOR SETUP
 			//setup_Motor_Driver();
@@ -171,23 +173,51 @@ void main(void)
 	//CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
 
 	// LOOP
-    while(1){
+    /* Configuring P1.1 as an input and enabling interrupts */
+    MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);
+    MAP_GPIO_enableInterrupt(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);
+    MAP_Interrupt_enableInterrupt(INT_PORT1);
+    /* Enabling MASTER interrupts */
+    MAP_Interrupt_enableMaster();
+	Direction_flag = 1;
+	Upper_Arm_Intention = 0.5;
+	ANGLE_min = 0;
+	ANGLE_max = 180;
+	PWM1=500*Upper_Arm_Intention;//ANGLE_damp;
+	PWM2=500*Upper_Arm_Intention;//ANGLE_damp;
+	setup_Motor_Driver();
+	//ANGLE_dir = 1;
 
-    	/*_delay_cycles(10000);
-    	clk = CS_getMCLK();
-    	aux = CS_getSMCLK();
+    while(1){
+		read_adc(resultsBuffer);
+		a = resultsBuffer[0];
+    	ANGLE_deg[0] = resultsBuffer[0];
+    	Angle_Dampen();
+    	PWM1=500*ANGLE_damp;
+    	PWM2=500*ANGLE_damp;
+    	setup_PWM();
+    	clk = ANGLE_damp;
+    	if(Direction_flag == -1){//increase angle/down
+    		drive_reverse();
+    	}else{
+    		drive_forward();//decrease angle/up
+    	}
+    	__delay_cycles(100000);
+    	aux = Direction_flag;
+    	/*aux = CS_getSMCLK();
     	 */
 
-		__delay_cycles(100);
+		//__delay_cycles(100);
 
 
-		MAP_Interrupt_enableInterrupt(INT_TA3_N);
+		//MAP_Interrupt_enableInterrupt(INT_TA3_N);
 
-		SPI_Collect_Data();
+		//SPI_Collect_Data();
 
-		MAP_Interrupt_disableInterrupt(INT_TA3_N);
+		//MAP_Interrupt_disableInterrupt(INT_TA3_N);
 
-		EMG_Condition_Data();
+		//EMG_Condition_Data();
 
 
 /*
@@ -305,6 +335,31 @@ void SPI_DATA_RATE_ISR(void)
 
 }
 
+void gpio_isr1(void)
+{
+    uint32_t status;
 
+    status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P1);
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P1, status);
+
+    /* Toggling the output on the LED */
+    if(status & GPIO_PIN1 )
+    {
+    	Upper_Arm_Intention = Upper_Arm_Intention + .1;
+    	if(Direction_flag == -1)
+    		Direction_flag =1;
+    	else
+    		Direction_flag =-1;
+    	//PWM1=500*Upper_Arm_Intention;//ANGLE_damp;
+    	//PWM2=500*Upper_Arm_Intention;//ANGLE_damp;
+    	//setup_PWM();
+    }else{
+    	Upper_Arm_Intention = 0;
+    	//PWM1=500*Upper_Arm_Intention;//ANGLE_damp;
+    	//PWM2=500*Upper_Arm_Intention;//ANGLE_damp;
+    	//setup_PWM();
+    }
+
+}
 
 

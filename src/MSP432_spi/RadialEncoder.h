@@ -15,7 +15,7 @@
 extern double ANGLE_deg[50]; // 50 Samples of Angle History
 extern double ANGLE_max; // Maximum Permitted Angle from Calibration Routine
 extern double ANGLE_min; // Minimum Permitted Angle from Calibration Routine
-extern int8_t ANGLE_dir; // + if Elbow Opening, - if Elbow Closing
+extern int8_t Direction_flag; // + if Elbow Opening, - if Elbow Closing
 extern double ANGLE_damp; // Dampening Coefficient
 
 extern int32_t raw_position;

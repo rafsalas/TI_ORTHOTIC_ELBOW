@@ -29,6 +29,8 @@ void setup_Motor_Driver(){
 }
 
 void setup_PWM(){
+	//PWM1 = 500*//Upper_Arm_Intention;
+	//PWM2 = 500*//Upper_Arm_Intention;
     pwmConfig0.clockSource = TIMER_A_CLOCKSOURCE_SMCLK;
     pwmConfig0.clockSourceDivider = TIMER_A_CLOCKSOURCE_DIVIDER_1;
     pwmConfig0.timerPeriod = CLK_PERIOD;
@@ -58,7 +60,7 @@ void setup_PWM(){
     pwmConfig3.dutyCycle = PWM2;
 
 
-   MAP_Timer_A_generatePWM(TIMER_A0_MODULE, &pwmConfig0);
+    MAP_Timer_A_generatePWM(TIMER_A0_MODULE, &pwmConfig0);
     MAP_Timer_A_generatePWM(TIMER_A0_MODULE, &pwmConfig1);
     MAP_Timer_A_generatePWM(TIMER_A1_MODULE, &pwmConfig2);
     MAP_Timer_A_generatePWM(TIMER_A1_MODULE, &pwmConfig3);
@@ -69,38 +71,36 @@ void drive_forward(){
 	//PWM-A2
 	MAP_GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P2, GPIO_PIN5, GPIO_PRIMARY_MODULE_FUNCTION);// AIN2 = PWM
     MAP_GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN4);
-    MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN4);// AIN1 = HIGH
+    MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN4);// AIN1 = Low
 
 	//PWM-B2
 	MAP_GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P7, GPIO_PIN7, GPIO_PRIMARY_MODULE_FUNCTION);//BIN2 = PWM
     MAP_GPIO_setAsOutputPin(GPIO_PORT_P7, GPIO_PIN5);
     MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P7, GPIO_PIN5);
 
-   /* MAP_Timer_A_generatePWM(TIMER_A0_MODULE, &pwmConfig0);
-    MAP_Timer_A_generatePWM(TIMER_A0_MODULE, &pwmConfig1);
-    MAP_Timer_A_generatePWM(TIMER_A1_MODULE, &pwmConfig2);
-    MAP_Timer_A_generatePWM(TIMER_A1_MODULE, &pwmConfig3);*/
-
 }
 
 void drive_reverse(){
 	MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P5, GPIO_PIN1);
-	//PWM-A1
+	//PWM-A1 = pwm
 	MAP_GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P2, GPIO_PIN4, GPIO_PRIMARY_MODULE_FUNCTION);
-	//pwmA2
-	MAP_GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN5);
+
+	MAP_GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN5);//pwmA2 = low
     MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN5);
 
-	//PWM-B1
+	//PWM-B1 =pwm
 	MAP_GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P7, GPIO_PIN5, GPIO_PRIMARY_MODULE_FUNCTION);
-	//PWM-B2
+	//PWM-B2 = low
 	MAP_GPIO_setAsOutputPin(GPIO_PORT_P7, GPIO_PIN7);
     MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P7, GPIO_PIN7);
+}
 
-   /* MAP_Timer_A_generatePWM(TIMER_A0_MODULE, p);
-    MAP_Timer_A_generatePWM(TIMER_A0_MODULE, &pwmConfig1);
-    MAP_Timer_A_generatePWM(TIMER_A1_MODULE, &pwmConfig2);
-    MAP_Timer_A_generatePWM(TIMER_A1_MODULE, &pwmConfig3);*/
+void drive(){
+	if(Direction_flag == -1){
+		drive_forward();
+	}else{
+		drive_reverse();
+	}
 }
 
 void drive_stop(){
