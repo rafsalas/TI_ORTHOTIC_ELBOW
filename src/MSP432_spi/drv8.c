@@ -29,8 +29,8 @@ void setup_Motor_Driver(){
 }
 
 void setup_PWM(){
-	//PWM1 = 500*//Upper_Arm_Intention;
-	//PWM2 = 500*//Upper_Arm_Intention;
+	//PWM1 = 500*Upper_Arm_Intention*ANGLE_damp;
+	//PWM2 = 500*Upper_Arm_Intention*ANGLE_damp;
     pwmConfig0.clockSource = TIMER_A_CLOCKSOURCE_SMCLK;
     pwmConfig0.clockSourceDivider = TIMER_A_CLOCKSOURCE_DIVIDER_1;
     pwmConfig0.timerPeriod = CLK_PERIOD;
@@ -95,11 +95,12 @@ void drive_reverse(){
     MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P7, GPIO_PIN7);
 }
 
-void drive(){
+void drive_motor(){
+	setup_PWM();
 	if(Direction_flag == -1){
-		drive_forward();
-	}else{
 		drive_reverse();
+	}else{
+		drive_forward();
 	}
 }
 
@@ -110,6 +111,16 @@ void drive_stop(){
 }
 
 //----------------------interrupts----------------------------------------------------------------------
+void interrupt_helper(){// in the event of motor fault
+	MAP_GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN0);
+	MAP_GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN2);
+	GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN2);
+	while(1){
+		GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN0);
+		__delay_cycles(100000);
+		GPIO_toggleOutputOnPin(GPIO_PORT_P2, GPIO_PIN2);
+	}
+}
 
 void gpio_isr5(void)//fault
 {
@@ -120,6 +131,7 @@ void gpio_isr5(void)//fault
 
     if(status & GPIO_PIN0)
     {
-    	fault = MAP_GPIO_getInputPinValue(GPIO_PORT_P5,GPIO_PIN0);
+    	drive_stop();
+    	interrupt_helper();
     }
 }

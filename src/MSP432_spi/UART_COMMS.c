@@ -109,7 +109,7 @@ void euscia2_isr(void)
         		else{
         			MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P2, GPIO_PIN2);
         		}
-        		GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
+        		MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
         }
             /*    if(RXData != 'a')              // Check value
                {

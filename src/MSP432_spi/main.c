@@ -117,6 +117,35 @@ void timersetup(){
 volatile double clk = 0;
 volatile int32_t aux = 0;
 
+void motor_test_setup(){
+    MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);//push buttons pin1 push = direction flag = 1, pin4 push = direction flag -1
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);
+    MAP_GPIO_enableInterrupt(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);
+    MAP_Interrupt_enableInterrupt(INT_PORT1);
+    /* Enabling MASTER interrupts */
+    MAP_Interrupt_enableMaster();
+	Direction_flag = 1;
+	Upper_Arm_Intention = 0.5;
+	ANGLE_min = 0;
+	ANGLE_max = 180;
+	PWM1=500*Upper_Arm_Intention;//ANGLE_damp;
+	PWM2=500*Upper_Arm_Intention;//ANGLE_damp;
+	setup_Motor_Driver();
+
+}
+void motor_test(){//this goes in the loop
+
+	read_adc(resultsBuffer);
+	a = resultsBuffer[0];
+	ANGLE_deg[0] = resultsBuffer[0];
+	Angle_Dampen();
+	PWM1=500*ANGLE_damp;
+	PWM2=500*ANGLE_damp;
+	drive_motor();
+	__delay_cycles(100000);
+	aux = Direction_flag;
+}
+
 void main(void)
 {
 	int i, j;
@@ -163,48 +192,14 @@ void main(void)
 	}*/
 
 
-	//MAP_UART_transmitData(EUSCI_A2_MODULE, '1');
-	//MAP_UART_transmitData(EUSCI_A2_MODULE, '2');
-	//MAP_UART_transmitData(EUSCI_A2_MODULE, '3');
-	//MAP_UART_transmitData(EUSCI_A2_MODULE, '4');
-	//MAP_UART_transmitData(EUSCI_A2_MODULE, '5');
+
 
 	//MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
 	//CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
-
-	// LOOP
-    /* Configuring P1.1 as an input and enabling interrupts */
-    MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);
-    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);
-    MAP_GPIO_enableInterrupt(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);
-    MAP_Interrupt_enableInterrupt(INT_PORT1);
-    /* Enabling MASTER interrupts */
-    MAP_Interrupt_enableMaster();
-	Direction_flag = 1;
-	Upper_Arm_Intention = 0.5;
-	ANGLE_min = 0;
-	ANGLE_max = 180;
-	PWM1=500*Upper_Arm_Intention;//ANGLE_damp;
-	PWM2=500*Upper_Arm_Intention;//ANGLE_damp;
-	setup_Motor_Driver();
-	//ANGLE_dir = 1;
+	motor_test_setup();
 
     while(1){
-		read_adc(resultsBuffer);
-		a = resultsBuffer[0];
-    	ANGLE_deg[0] = resultsBuffer[0];
-    	Angle_Dampen();
-    	PWM1=500*ANGLE_damp;
-    	PWM2=500*ANGLE_damp;
-    	setup_PWM();
-    	clk = ANGLE_damp;
-    	if(Direction_flag == -1){//increase angle/down
-    		drive_reverse();
-    	}else{
-    		drive_forward();//decrease angle/up
-    	}
-    	__delay_cycles(100000);
-    	aux = Direction_flag;
+		motor_test();
     	/*aux = CS_getSMCLK();
     	 */
 
@@ -308,26 +303,6 @@ void main(void)
 }
 //-----------------------------------------------Interrupts
 
-void adc_isr(void)
-{
-    uint64_t status;
-    status = MAP_ADC14_getEnabledInterruptStatus();
-    MAP_ADC14_clearInterruptFlag(status);
-
-    /*  if(status & ADC_INT0)
-    {
-        a = ADC14_getResult(ADC_MEM0);
-    }*/
-
-    if(status & ADC_INT1)
-    {
-        MAP_ADC14_getMultiSequenceResult(resultsBuffer);
-        a = resultsBuffer[0];
-        b = resultsBuffer[1];
-        print_f(EUSCI_A2_MODULE,"result1: %i result1: %i",a,b );
-    }
-}
-
 void SPI_DATA_RATE_ISR(void)
 {
 
@@ -350,14 +325,10 @@ void gpio_isr1(void)
     		Direction_flag =1;
     	else
     		Direction_flag =-1;
-    	//PWM1=500*Upper_Arm_Intention;//ANGLE_damp;
-    	//PWM2=500*Upper_Arm_Intention;//ANGLE_damp;
-    	//setup_PWM();
+
     }else{
     	Upper_Arm_Intention = 0;
-    	//PWM1=500*Upper_Arm_Intention;//ANGLE_damp;
-    	//PWM2=500*Upper_Arm_Intention;//ANGLE_damp;
-    	//setup_PWM();
+
     }
 
 }
