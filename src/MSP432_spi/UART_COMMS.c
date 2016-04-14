@@ -3,6 +3,15 @@
  *
  *  Created on: Feb 20, 2016
  *      Author: rafael
+ *      Uart setup with a baud rate of 9600 with smclk running at 3MHz. LED indicators tell transmission status. Uart pins are connected to blue tooth
+ *
+ *      Pin map:
+ *      3.2 = Rx
+ *      3.3 = Tx
+ *      1.0 = red led
+ *      2.2 = blue LED
+ *
+ *      CLK : SMCLK
  */
 #include <ctype.h>
 #include <stdlib.h>
@@ -19,10 +28,11 @@ volatile uint8_t rx= 0;
 void uart_setup(){
 	const eUSCI_UART_Config uartConfig =
 	{
+			//9600 baud rate at smclk = 3MHz
 	        EUSCI_A_UART_CLOCKSOURCE_SMCLK,          // SMCLK Clock Source
-	        19,                                     // BRDIV = 26
-	        8,                                       // UCxBRF = 0
-	        85,                                       // UCxBRS = 111
+	        19,                                     //
+	        8,                                       //
+	        85,                                       //
 	        EUSCI_A_UART_NO_PARITY,                  // No Parity
 	        EUSCI_A_UART_LSB_FIRST,                  // LSB First
 	        EUSCI_A_UART_ONE_STOP_BIT,               // One stop bit
@@ -83,9 +93,8 @@ void euscia2_isr(void)
         uint8_t itt;
         switch(RXData){
 
-        	case 'a':
-        		//memset(RxBuff, 0, 10 );      //clear buffer for limits
-        		for(itt = 0;itt<10;itt= itt+1){
+        	case 'a'://start cal process signal, start to gather data
+        		for(itt = 0;itt<10;itt= itt+1){//clear buffer for limits
         			RxBuff[itt] = 0;
         		}
         		RxBuffSize = 0; //reset iterator
@@ -99,30 +108,18 @@ void euscia2_isr(void)
         		GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
         		break;
         	case 's':
-        		//submit flex
+        		//back up
         		break;
         	default:
         		if(isalnum(RXData)){//load buffer with angle limits
                 	RxBuff[RxBuffSize]= RXData;
                 	RxBuffSize++;
         		}
-        		else{
+        		else{// unexpected char
         			MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P2, GPIO_PIN2);
         		}
         		MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
         }
-            /*    if(RXData != 'a')              // Check value
-               {
-                   MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P2, GPIO_PIN2);
-                   MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P1, GPIO_PIN0);
-
-                   //while(1);                       // Trap CPU
-               }else{
-            	   MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN2);
-            	   MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P1, GPIO_PIN0);
-               }*/
-
-
     }
 
 }

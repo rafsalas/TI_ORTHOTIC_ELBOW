@@ -4,6 +4,7 @@
  *https://github.com/samvrlewis/MSP432-printf.git
  *Made by Sam Lewis.
  *
+ *   Modifications made by Rafael
  *
  */
 

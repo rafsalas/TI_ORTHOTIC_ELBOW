@@ -3,6 +3,19 @@
  *
  *  Created on: Feb 3, 2016
  *      Author: rafael
+ *
+ *      Two PWMs are set up and ran to control dual motors (PWM A and B). Each PWM requires two pins.
+ *      When one pin is set to PWM signal the other is set low. Direction of the motor is dependant on
+ *      which pin is set to pwm. An enable pin is used to enable motor movement and a fault pin is used to indicated failure
+ *      Pin map
+ *      2.4 = AIN1
+ *      2.5 = AIN2
+ *      7.5 = BIN1
+ *      7.7 = BIN2
+ *      5.1 = enable
+ *      5.0 = fault
+ *
+ *      CLK = SMCLK
  */
 
 #ifndef DRV8_H_
@@ -11,7 +24,7 @@
 
 
 
-#define CLK_PERIOD 500
+#define CLK_PERIOD 1000
 
 
 Timer_A_PWMConfig pwmConfig0;
@@ -20,6 +33,8 @@ Timer_A_PWMConfig pwmConfig2;
 Timer_A_PWMConfig pwmConfig3;
 extern uint16_t PWM1;
 extern uint16_t PWM2;
+
+// motor calculation constants
 extern double Upper_Arm_Intention;
 extern double ANGLE_damp;
 extern int8_t Direction_flag;

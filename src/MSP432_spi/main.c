@@ -1,21 +1,26 @@
-// MAIN
-
-// Elbow Orthosis
-// Texas A&M University & Texas Instruments
-// Fall 2015 - Spring 2016
-// Authors: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
-
-//1.1,1.2,1.3,1.5,1.6,1.7
-//2.4,2.5
-//3.2,3.3,3.5
-//4.0,4.1,4.2,4.5,4.6
-//5.0,5.1,5.2,5.3,5.4,5.5
-//7.5,7.7
 /*
-*clock_table
-*|MCLK  |SMCLK  |ACLK  |SPICLK  |TIMER3  |
-*|3MHz  |3MHz   |32KHz |1MHz    |1000Hz  |
-*/
+ * main.c
+ *
+ * 	Elbow Orthosis
+ * 	Texas A&M University & Texas Instruments
+ *
+ *  Created on: Fall 2015
+ *      Author: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
+ *
+ * Pins used:
+ *	1.1,1.2,1.3,1.5,1.6,1.7
+ *	2.0,2.2,2.4,2.5
+ *	3.2,3.3,3.5
+ *	4.0,4.1,4.2,4.5,4.6
+ *	5.0,5.1,5.2,5.3,5.4,5.5
+ *	7.5,7.7
+ *
+ * Clock table (normal values)
+ *	|MCLK  |SMCLK  |ACLK  |SPICLK  |TIMER3  |
+ *	|3MHz  |3MHz   |32KHz |1MHz    |1000Hz  |
+ *
+ */
+
 #include <driverlib.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -118,8 +123,8 @@ volatile double clk = 0;
 volatile int32_t aux = 0;
 
 void motor_test_setup(){
-    MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);//push buttons pin1 push = direction flag = 1, pin4 push = direction flag -1
-    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);
+    MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);//push buttons pin1 push = toggle direction flag
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);//pin 4 push does nothing
     MAP_GPIO_enableInterrupt(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);
     MAP_Interrupt_enableInterrupt(INT_PORT1);
     /* Enabling MASTER interrupts */
@@ -128,19 +133,19 @@ void motor_test_setup(){
 	Upper_Arm_Intention = 0.5;
 	ANGLE_min = 0;
 	ANGLE_max = 180;
-	PWM1=500*Upper_Arm_Intention;//ANGLE_damp;
-	PWM2=500*Upper_Arm_Intention;//ANGLE_damp;
+	PWM1=1000;//*Upper_Arm_Intention;//ANGLE_damp;
+	PWM2=1000;//*Upper_Arm_Intention;//ANGLE_damp;
 	setup_Motor_Driver();
 
 }
 void motor_test(){//this goes in the loop
 
-	read_adc(resultsBuffer);
-	a = resultsBuffer[0];
-	ANGLE_deg[0] = resultsBuffer[0];
-	Angle_Dampen();
-	PWM1=500*ANGLE_damp;
-	PWM2=500*ANGLE_damp;
+	//read_adc(resultsBuffer);
+	//a = resultsBuffer[0];
+	//ANGLE_deg[0] = resultsBuffer[0];
+	//Angle_Dampen();
+	//PWM1=500;//*ANGLE_damp;
+	//PWM2=500;//*ANGLE_damp;
 	drive_motor();
 	__delay_cycles(100000);
 	aux = Direction_flag;
@@ -169,7 +174,7 @@ void main(void)
 			//uart_setup();
 
 		// ADC
-			setup_adc();
+			//setup_adc();
 
 		// MOTOR SETUP
 			//setup_Motor_Driver();
@@ -197,11 +202,11 @@ void main(void)
 	//MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
 	//CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
 	motor_test_setup();
-
+	drive_forward();
     while(1){
-		motor_test();
-    	/*aux = CS_getSMCLK();
-    	 */
+		//motor_test();
+    	//aux = CS_getSMCLK();
+    	//clk = CS_getACLK();
 
 		//__delay_cycles(100);
 
@@ -320,14 +325,10 @@ void gpio_isr1(void)
     /* Toggling the output on the LED */
     if(status & GPIO_PIN1 )
     {
-    	Upper_Arm_Intention = Upper_Arm_Intention + .1;
     	if(Direction_flag == -1)
     		Direction_flag =1;
     	else
     		Direction_flag =-1;
-
-    }else{
-    	Upper_Arm_Intention = 0;
 
     }
 

@@ -1,10 +1,10 @@
 /*
- * printf library for the MSP432
- *Taken from git repository:
- *https://github.com/samvrlewis/MSP432-printf.git
- *Made by Sam Lewis.
+ * 	printf library for the MSP432
+ *	Taken from git repository:
+ *	https://github.com/samvrlewis/MSP432-printf.git
+ *	Made by Sam Lewis.
  *
- *
+ *  Modifications made by Rafael
  */
 
 #ifndef PRINTF_H_

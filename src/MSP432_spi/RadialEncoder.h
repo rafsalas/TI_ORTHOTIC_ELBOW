@@ -1,9 +1,15 @@
-// RadialEncoder.h
+/*
+ * RadialEncoder.h
+ *
+ *  Created on: Fall 2015
+ *      Author:  Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
+ *      Elbow Orthosis
+ *		Texas A&M University & Texas Instruments
+ *
+ *
+ */
 
-// Elbow Orthosis
-// Texas A&M University & Texas Instruments
-// Fall 2015 - Spring 2016
-// Authors: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
+
 
 
 #ifndef RADIALENCODER_H_
