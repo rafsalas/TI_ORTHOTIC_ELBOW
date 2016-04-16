@@ -1,9 +1,13 @@
-// RadialEncoder.c
-
-// Elbow Orthosis
-// Texas A&M University & Texas Instruments
-// Fall 2015 - Spring 2016
-// Authors: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
+/*
+ * RadialEncoder.c
+ *
+ *  Created on: Fall 2015
+ *      Author:  Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
+ *      Elbow Orthosis
+ *		Texas A&M University & Texas Instruments
+ *
+ *
+ */
 
 #include "RadialEncoder.h"
 
@@ -43,11 +47,16 @@ double h_DAMP[20] = { // Coefficients in Damping Look-Up Table
 void Angle_Dampen(){
 	uint32_t ANGLE_i;
 
-	// Convert Measured Angle into Index for Lookup Table
-	ANGLE_i=(uint32_t)(N_DAMP*(ANGLE_deg[0]-ANGLE_min)/(ANGLE_max-ANGLE_min));
+	// Bound Angle Value between Minimum and Maximum Values
+	if(ANGLE_deg[0]>=ANGLE_max) ANGLE_deg[0] = ANGLE_max-0.5*(ANGLE_max-ANGLE_min)/N_DAMP;
+	if(ANGLE_deg[0]<=ANGLE_min) ANGLE_deg[0] = ANGLE_min+0.5*(ANGLE_max-ANGLE_min)/N_DAMP;
 
-	if(ANGLE_dir<0) ANGLE_damp=h_DAMP[ANGLE_i]; // Decreasing Angle (ELBOW CLOSING)
-	else            ANGLE_damp=h_DAMP[N_DAMP-ANGLE_i]; // Increasing Angle (ELBOW OPENING)
+	// Convert Measured Angle into Index for Lookup Table
+	ANGLE_i=(N_DAMP*((uint32_t)(ANGLE_deg[0]-ANGLE_min))/((uint32_t)(ANGLE_max-ANGLE_min)));
+
+	// Produce Damping Coefficient from Normal CDF Curve
+	if(Direction_flag<0) ANGLE_damp=h_DAMP[ANGLE_i]; // Decreasing Angle (ELBOW CLOSING)
+	else            ANGLE_damp=h_DAMP[N_DAMP-ANGLE_i-1]; // Increasing Angle (ELBOW OPENING)
 
 }
 

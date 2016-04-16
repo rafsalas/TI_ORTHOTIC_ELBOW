@@ -46,8 +46,8 @@ public class MainActivity extends Activity {
 
             @Override
             public void onClick(View arg0) {
-                //Intent intent = new Intent(context, BluetoothActivity.class);
-                Intent intent = new Intent(context, CalibrationActivity.class);
+                Intent intent = new Intent(context, BluetoothActivity.class);
+                //Intent intent = new Intent(context, CalibrationActivity.class);
                 startActivity(intent);
             }
 

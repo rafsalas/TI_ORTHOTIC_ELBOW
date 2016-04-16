@@ -46,9 +46,9 @@ static void defaultISR(void);
 /* External declaration for the reset handler that is to be called when the */
 /* processor is started                                                     */
 extern void _c_int00(void);
-extern void adc_isr(void);
 extern void gpio_isr5(void);
 extern void gpio_isr3(void);
+extern void gpio_isr1(void);
 extern void euscia2_isr(void);
 
 extern void SPI_DATA_RATE_ISR(void);
@@ -109,7 +109,7 @@ void (* const interruptVectors[])(void) =
     defaultISR,                             /* EUSCIB1 ISR               */
     defaultISR,                             /* EUSCIB2 ISR               */
     defaultISR,                             /* EUSCIB3 ISR               */
-	adc_isr,                             /* ADC14 ISR                 */
+	defaultISR,                             /* ADC14 ISR                 */
     defaultISR,                             /* T32_INT1 ISR              */
     defaultISR,                             /* T32_INT2 ISR              */
     defaultISR,                             /* T32_INTC ISR              */
@@ -120,7 +120,7 @@ void (* const interruptVectors[])(void) =
     defaultISR,                             /* DMA_INT2 ISR              */
     defaultISR,                             /* DMA_INT1 ISR              */
     defaultISR,                             /* DMA_INT0 ISR              */
-	defaultISR,                             /* PORT1 ISR                 */
+	gpio_isr1,                             /* PORT1 ISR                 */
     defaultISR,                             /* PORT2 ISR                 */
 	gpio_isr3,                             /* PORT3 ISR                 */
 	defaultISR,                             /* PORT4 ISR                 */

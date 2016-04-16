@@ -193,107 +193,6 @@ void spi_start(int32_t sample[50]){
 	SPI_Connected=0x01; //Flag for SPI Initialize Complete
 }
 
-void spi_register_setting(){
-	// Power Up sequencing - Single ended Input
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x11); //SDATAC  0001 0001
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x43); //CONFIG3 address 0100 0011
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Write to 1 register
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x6C); //Register data 0110 1100
-	__delay_cycles(960);
-	__delay_cycles(10000);
-
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x41); //CONFIG1 address 0100 0001
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00);// Write to 1 register
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x96); //Register data - 500Hz data rate
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x42); //CONFIG2 address
-//	 __delay_cycles(960);
-	 __delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Write to 1 register
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0xC0); //Register data
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x45); //CH1SET address
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x07); //Write to 8 registers
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Register data - normal electrode
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Register data
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Register data
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Register data
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Register data
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Register data
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Register data
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Register data
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x55); //MISC1 address is 15h
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); //Write to 1 register
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x20); //Register data - Set SRB1
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE,0x44); //LOFF address
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	MAP_SPI_transmitData(EUSCI_B0_MODULE,0x00); //Write to 1 register
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-
-	MAP_SPI_transmitData(EUSCI_B0_MODULE,0x06); //Register data - 24nA, 31.2Hz
-//	__delay_cycles(960);
-	__delay_cycles(5000); //Wait 150ms
-	__delay_cycles(1920);
-
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x23); //config4
-	__delay_cycles(5000);
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); //read one reg
-	__delay_cycles(5000);
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); //read one reg
-
-	__delay_cycles(5000);
-
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x08); //START
-//	__delay_cycles(960);
-	__delay_cycles(5000);
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x10); // read data cont
-	//__delay_cycles(5000);
-}
 
 void spi_write_registers(){
 	// Write ADS1299 Firmware Registers
@@ -313,8 +212,8 @@ void spi_write_registers(){
 	// CONFIG 1 Register (Sample Frequency)
 	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x96); // CONFIG1 Register (DR 250 Hz)
 	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x95); // CONFIG1 Register (DR 500 Hz)
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x94); // CONFIG1 Register (DR 1000 Hz)
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x93); // CONFIG1 Register (DR 2000 Hz)
+	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x94); // CONFIG1 Register (DR 1000 Hz)
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x93); // CONFIG1 Register (DR 2000 Hz)
 	__delay_cycles(1000);
 
 	// CONFIG 2 Register (Test Signals)
@@ -340,24 +239,22 @@ void spi_write_registers(){
 
 	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x80); // Channel OFF
 
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x05); // CH1SET Register
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x60); // CH1SET Register
+
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x20); // CH1SET Register
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); // CH1SET Register
 	__delay_cycles(1000);
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); // CH2SET Register
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x20); // CH2SET Register
 	__delay_cycles(1000);
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x02); // CH3SET Register
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x20); // CH3SET Register
 	__delay_cycles(1000);
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x02); // CH4SET Register
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x20); // CH4SET Register
 	__delay_cycles(1000);
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x05); // CH5SET Register
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x80); // CH5SET Register (Off)
 	__delay_cycles(1000);
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x05); // CH6SET Register
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x80); // CH6SET Register (Off)
 	__delay_cycles(1000);
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x05); // CH7SET Register
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x80); // CH7SET Register (Off)
 	__delay_cycles(1000);
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x05); // CH8SET Register
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x80); // CH8SET Register (Off)
 	__delay_cycles(1000);
 
 }
@@ -617,9 +514,8 @@ void SPI_Collect_Data(void)
 	    	{
 
 				// PROMPT DATA STREAM
-				//for(i=0;i<NUM_ACTIVE_CHANNELS;i++)
-				for(i=0;i<NUM_CHANNELS;i++)
-
+				for(i=0;i<NUM_ACTIVE_CHANNELS;i++)
+				//for(i=0;i<NUM_CHANNELS;i++)
 				{
 
 					EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
@@ -669,7 +565,7 @@ void SPI_Collect_Data(void)
 		}
 	    // STOP SPI CHANNEL
 		//
-		//EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x0A; // STOP DATA Conversion
+		EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x0A; // STOP DATA Conversion
 		//
 		__delay_cycles(10000); // SPI Delay
 		//__delay_cycles(1000000); // SPI Delay
@@ -723,9 +619,10 @@ void EMG_Condition_Data(void)
 		}
 		average = sum/(N_WIN-1-N_FIR_HP); // Average Middle of Convolution
 
-
+		// Dynamic EMG Maximum
 		if(average>EMG_max[i] || EMG_max[i]==0) EMG_max[i]=average;
 
+		// Dynamic EMG Minimum
 		if(average<EMG_min[i] || EMG_min[i]==0) EMG_min[i]=average;
 
 
@@ -736,15 +633,19 @@ void EMG_Condition_Data(void)
 			EMG[i][j]=EMG[i][j-1];
 		}
 
-		//EMG[i][0]=average;
-
+		// Normalize
 		EMG[i][0]=(average-EMG_min[i])/(EMG_max[i]-EMG_min[i]);
 
+		// Bound EMG at 1
+		if(EMG[i][0] >= 1) EMG[i][0] = 1;
+
+		// Bound EMG at 0
+		if(EMG[i][0] <= 0) EMG[i][0] = 0;
 	}
 
 }
 
-void Convolution()
+void Convolution(void)
 {
 	//Result[N_a+N_b-1];
 	int n;
@@ -768,7 +669,34 @@ void Convolution()
 }
 
 
+void Comparator(){
+	// Compare Normalized Biceps and Triceps EMG Signals
+	if(EMG[BICEPS][0] > EMG[TRICEPS][0]) // More Active Biceps Signal -> Use Biceps Signal, Decrease Angle
+	{
+		Upper_Arm_Intention = EMG[0][0];
+		Direction_flag = -1;
+	}
+	else if(EMG[BICEPS][0] < EMG[TRICEPS][0]) // More Active Triceps Signal -> Use Triceps Signal, Increase Angle
+	{
+		Upper_Arm_Intention = EMG[TRICEPS][0];
+		Direction_flag = 1;
+	}
+	else // Equal Intensity Signals
+	{
+		Upper_Arm_Intention = 0;
+		Direction_flag = 0;
+	}
 
+	/*
+	if(EMG[2][0] > EMG[3][0]){ //forearm top intention
+		Lower_Arm_Intention = EMG[2][0];
+	}else if(EMG[2][0] < EMG[3][0]){//forearm bottom intention
+		Lower_Arm_Intention = EMG[3][0];
+	}else{
+		Lower_Arm_Intention = 0;
+	}*/
+
+}
 
 //----------------------interrupts----------------------------------------------------------------------
 

@@ -1,21 +1,26 @@
-// MAIN
-
-// Elbow Orthosis
-// Texas A&M University & Texas Instruments
-// Fall 2015 - Spring 2016
-// Authors: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
-
-//1.1,1.2,1.3,1.5,1.6,1.7
-//2.4,2.5
-//3.2,3.3,3.5
-//4.0,4.1,4.2,4.5,4.6
-//5.0,5.1,5.2,5.3,5.4,5.5
-//7.5,7.7
 /*
-*clock_table
-*|MCLK  |SMCLK  |ACLK  |SPICLK  |TIMER3  |
-*|3MHz  |3MHz   |32KHz |1MHz    |1000Hz  |
-*/
+ * main.c
+ *
+ * 	Elbow Orthosis
+ * 	Texas A&M University & Texas Instruments
+ *
+ *  Created on: Fall 2015
+ *      Author: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
+ *
+ * Pins used:
+ *	1.1,1.2,1.3,1.5,1.6,1.7
+ *	2.0,2.2,2.4,2.5
+ *	3.2,3.3,3.5
+ *	4.0,4.1,4.2,4.5,4.6
+ *	5.0,5.1,5.2,5.3,5.4,5.5
+ *	7.5,7.7
+ *
+ * Clock table (normal values)
+ *	|MCLK  |SMCLK  |ACLK  |SPICLK  |TIMER3  |
+ *	|3MHz  |3MHz   |32KHz |1MHz    |1000Hz  |
+ *
+ */
+
 #include <driverlib.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -26,12 +31,19 @@
 #include "UART_COMMS.h"
 #include "drv8.h"
 #include "ADC_Sensors.h"
+#include "RadialEncoder.h"
 
 //-----------------------------------------------Variables
 
 ///////////////////////////
 // MAIN ROUTINE
 ///////////////////////////
+
+// GLOBAL DEFINITIONS
+const uint8_t BICEPS = 0; // Biceps Electrode Number
+const uint8_t TRICEPS = 1; // Triceps Electrode Number
+const uint8_t FOREARM_I = 2; // Inner Forearm Electrode Number
+const uint8_t FOREARM_O = 3; // Outer Forearm Electrode Number
 
 // SPI     -> EMG Voltage -> EMG Coefficient
 // ADC POT -> Angle       -> Dampen Coefficient
@@ -41,15 +53,18 @@
 uint8_t Main_Routine_Rate_Flag = 0x00; // Flag for Main Routine Interrupt
 
 
-// SPI
 
+
+// SPI
 uint8_t Drdy = 0x00; //Flag for DRDY on SPI Channel
 uint8_t SPI_Cleared = 1; // Flag to Wait Until SPI Channel Clears
 uint8_t SPI_Connected = 0; // Flag to Wait Until SPI Initialiation Complete
 uint8_t Cal_Request = 0;
 uint8_t Read_flag = 0;
+uint16_t Calibration_History = 100;
+
 // EMG
-double EMG[8][100+51-1]; // 8 Channel History (Filtered, Rectified, Averaged)
+double EMG[8][100+11-1]; // 8 Channel History (Filtered, Rectified, Averaged)
 
 // NORMALIZATION ROUTINE
 double EMG_max[8]; // Maximum EMG Signal
@@ -60,15 +75,16 @@ double EMG_min_i[8];// = {51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+51+51, 51+5
 double ANGLE_deg[50]; // 50 Samples of Angle History
 double ANGLE_max; // Maximum Permitted Angle from Calibration Routine
 double ANGLE_min; // Minimum Permitted Angle from Calibration Routine
-int8_t ANGLE_dir; // + if Elbow Opening, - if Elbow Closing
+int8_t Direction_flag= 0; // + if Elbow Opening, - if Elbow Closing
 double ANGLE_damp; // Dampening Coefficient
 
 
 // MOTOR
 double MOTOR[50]; // 50 Samples of Motor Control History
-
-
-
+double Upper_Arm_Intention=0;
+double Lower_Arm_Intention=0;
+uint16_t PWM1 = 500;
+uint16_t PWM2 = 500;
 //////
 // END
 //////
@@ -110,8 +126,37 @@ void timersetup(){
     MAP_Timer_A_startCounter(TIMER_A3_MODULE, TIMER_A_CONTINUOUS_MODE);
 }
 
-volatile uint32_t clk = 0;
-volatile uint32_t aux = 0;
+volatile double clk = 0;
+volatile int32_t aux = 0;
+
+void motor_test_setup(){
+    MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);//push buttons pin1 push = toggle direction flag
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);//pin 4 push does nothing
+    MAP_GPIO_enableInterrupt(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);
+    MAP_Interrupt_enableInterrupt(INT_PORT1);
+    /* Enabling MASTER interrupts */
+    MAP_Interrupt_enableMaster();
+	Direction_flag = 1;
+	Upper_Arm_Intention = 0.5;
+	ANGLE_min = 0;
+	ANGLE_max = 180;
+	PWM1=1000;//*Upper_Arm_Intention;//ANGLE_damp;
+	PWM2=1000;//*Upper_Arm_Intention;//ANGLE_damp;
+	setup_Motor_Driver();
+
+}
+void motor_test(){//this goes in the loop
+
+	//read_adc(resultsBuffer);
+	//a = resultsBuffer[0];
+	//ANGLE_deg[0] = resultsBuffer[0];
+	//Angle_Dampen();
+	//PWM1=500;//*ANGLE_damp;
+	//PWM2=500;//*ANGLE_damp;
+	drive_motor();
+	__delay_cycles(100000);
+	aux = Direction_flag;
+}
 
 void main(void)
 {
@@ -142,7 +187,7 @@ void main(void)
 			//setup_Motor_Driver();
 
 
-	/*while(1){
+	while(1){
 		__delay_cycles(100);
 
 
@@ -156,36 +201,30 @@ void main(void)
 
 
 
-	}*/
+	}
 
 
-	//MAP_UART_transmitData(EUSCI_A2_MODULE, '1');
-	//MAP_UART_transmitData(EUSCI_A2_MODULE, '2');
-	//MAP_UART_transmitData(EUSCI_A2_MODULE, '3');
-	//MAP_UART_transmitData(EUSCI_A2_MODULE, '4');
-	//MAP_UART_transmitData(EUSCI_A2_MODULE, '5');
+
 
 	//MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
 	//CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
-
-	// LOOP
+	//motor_test_setup();
+	//drive_forward();
     while(1){
+		//motor_test();
+    	//aux = CS_getSMCLK();
+    	//clk = CS_getACLK();
 
-    	/*_delay_cycles(10000);
-    	clk = CS_getMCLK();
-    	aux = CS_getSMCLK();
-    	 */
-
-		__delay_cycles(5000000);
+		//__delay_cycles(100);
 
 
-		MAP_Interrupt_enableInterrupt(INT_TA3_N);
+		//MAP_Interrupt_enableInterrupt(INT_TA3_N);
 
-		SPI_Collect_Data();
+		//SPI_Collect_Data();
 
-		MAP_Interrupt_disableInterrupt(INT_TA3_N);
+		//MAP_Interrupt_disableInterrupt(INT_TA3_N);
 
-		EMG_Condition_Data();
+		//EMG_Condition_Data();
 
 
 /*
@@ -266,7 +305,7 @@ void main(void)
 			// EMG History Buffer
 			for(i=0;j<8;j++) for(j=EMG_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
 			// ANGLE History Buffer
-			for(i=ANGLE_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
+			for(i=ANGLE_History-1;j>0;j--) ANGLE_deg[i][j]=ANGLE_deg[i][j-1];
 			// MOTOR History Buffer
 			for(i=MOTOR_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
 */
@@ -276,26 +315,6 @@ void main(void)
 }
 //-----------------------------------------------Interrupts
 
-void adc_isr(void)
-{
-    uint64_t status;
-    status = MAP_ADC14_getEnabledInterruptStatus();
-    MAP_ADC14_clearInterruptFlag(status);
-
-    /*  if(status & ADC_INT0)
-    {
-        a = ADC14_getResult(ADC_MEM0);
-    }*/
-
-    if(status & ADC_INT1)
-    {
-        MAP_ADC14_getMultiSequenceResult(resultsBuffer);
-        a = resultsBuffer[0];
-        b = resultsBuffer[1];
-        printf(EUSCI_A2_MODULE,"result1: %i result1: %i",a,b );
-    }
-}
-
 void SPI_DATA_RATE_ISR(void)
 {
 
@@ -303,6 +322,23 @@ void SPI_DATA_RATE_ISR(void)
 
 }
 
+void gpio_isr1(void)
+{
+    uint32_t status;
 
+    status = MAP_GPIO_getEnabledInterruptStatus(GPIO_PORT_P1);
+    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P1, status);
+
+    /* Toggling the output on the LED */
+    if(status & GPIO_PIN1 )
+    {
+    	if(Direction_flag == -1)
+    		Direction_flag =1;
+    	else
+    		Direction_flag =-1;
+
+    }
+
+}
 
 
