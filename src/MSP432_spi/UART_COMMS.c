@@ -43,10 +43,12 @@ void uart_setup(){
     MAP_Interrupt_enableMaster();
 }
 
+/*
 uint8_t *read_cal_angles(){
 
 
 }
+*/
 
 void euscia2_isr(void)
 {
@@ -61,7 +63,7 @@ void euscia2_isr(void)
         switch(RXData){
 
         	case 'a':
-        		memset(RxBuff, 0x00, 10 );//clear buffer for limits
+        		//memset(RxBuff, 0x00, 10 );//clear buffer for limits
         		RxBuffSize = 0; //reset iterator
         		Cal_Request = 1; //signal that a calibration is requested and wait for incoming message
         		GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);

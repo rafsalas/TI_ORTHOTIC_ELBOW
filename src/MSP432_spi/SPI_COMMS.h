@@ -17,7 +17,7 @@
 // USER VARIABLES
 #define NUM_CHANNELS 8 // Number of Signal Channels
 #define NUM_ACTIVE_CHANNELS 4 // Number of Active Signal Channels
-#define EMG_History 50 // EMG Data History
+#define EMG_History 100+11-1 // EMG Data History
 
 // CLOCK RATES
 uint16_t msp_clk_rate;//48Mhz
@@ -31,7 +31,7 @@ extern uint8_t SPI_Connected; //Flag for SPI Initialize Complete
 
 
 // EMG DATA
-extern double EMG[8][50]; // 8 Channel History (Filtered, Rectified, Averaged)
+extern double EMG[8][100+51-1]; // 8 Channel History (Filtered, Rectified, Averaged)
 
 // NORMALIZATION ROUTINE
 extern double EMG_max[8]; // Maximum EMG Signal

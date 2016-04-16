@@ -49,7 +49,7 @@ uint8_t SPI_Connected = 0; // Flag to Wait Until SPI Initialiation Complete
 uint8_t Cal_Request = 0;
 uint8_t Read_flag = 0;
 // EMG
-double EMG[8][50]; // 8 Channel History (Filtered, Rectified, Averaged)
+double EMG[8][100+51-1]; // 8 Channel History (Filtered, Rectified, Averaged)
 
 // NORMALIZATION ROUTINE
 double EMG_max[8]; // Maximum EMG Signal
@@ -176,7 +176,7 @@ void main(void)
     	aux = CS_getSMCLK();
     	 */
 
-		__delay_cycles(100);
+		__delay_cycles(5000000);
 
 
 		MAP_Interrupt_enableInterrupt(INT_TA3_N);
