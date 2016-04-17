@@ -70,6 +70,7 @@ double ANGLE_max; // Maximum Permitted Angle from Calibration Routine
 double ANGLE_min; // Minimum Permitted Angle from Calibration Routine
 int8_t Direction_flag= 0; // + if Elbow Opening, - if Elbow Closing
 double ANGLE_damp; // Dampening Coefficient
+double ANGLE_ave = 0;
 
 
 // MOTOR
@@ -85,8 +86,18 @@ uint16_t PWM2 = 500;
 //-----------------------------------------------ADC
 static uint16_t resultsBuffer[4];// used for ADC
 volatile uint16_t a,b,c,d =0; //used for adc testing
+volatile double clk = 0;
+volatile int32_t aux = 0;
 
+void raise_clk_rate(){//Used to change to high speed calculation crunch
+	MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
+	CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
+}
 
+void lower_clk_rate(){//Used to conserve energy
+	CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_3);
+	MAP_PCM_setCoreVoltageLevel(PCM_VCORE0);
+}
 
 void timersetup(){
 	const Timer_A_ContinuousModeConfig continuousModeConfig =
@@ -119,9 +130,6 @@ void timersetup(){
     MAP_Timer_A_startCounter(TIMER_A3_MODULE, TIMER_A_CONTINUOUS_MODE);
 }
 
-volatile double clk = 0;
-volatile int32_t aux = 0;
-
 void motor_test_setup(){
     MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);//push buttons pin1 push = toggle direction flag
     MAP_GPIO_clearInterruptFlag(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);//pin 4 push does nothing
@@ -138,6 +146,7 @@ void motor_test_setup(){
 	setup_Motor_Driver();
 
 }
+
 void motor_test(){//this goes in the loop
 
 	//read_adc(resultsBuffer);
@@ -157,8 +166,6 @@ void main(void)
 	MAP_WDT_A_holdTimer();
 
 	// INITIALIZATION
-	MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
-	CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
 
 		// BLUETOOTH ROUTINE
 			//Bluetooth
@@ -171,7 +178,7 @@ void main(void)
 			//drdy_setup();
 
 		// UART
-			//uart_setup();
+			uart_setup();
 
 		// ADC
 			//setup_adc();
@@ -196,21 +203,12 @@ void main(void)
 
 	}*/
 
-
-
-
-	//MAP_PCM_setCoreVoltageLevel(PCM_VCORE1);
-	//CS_setDCOCenteredFrequency(CS_DCO_FREQUENCY_48);
 	motor_test_setup();
 	drive_forward();
     while(1){
 		//motor_test();
     	//aux = CS_getSMCLK();
-    	//clk = CS_getACLK();
-
-		//__delay_cycles(100);
-
-
+    	clk = CS_getSMCLK();
 		//MAP_Interrupt_enableInterrupt(INT_TA3_N);
 
 		//SPI_Collect_Data();
@@ -229,6 +227,7 @@ void main(void)
 		// INTERFACES: MSB|MID|LSB -> 2's Complement
 		// OUTPUT: ADC Data
 		///////////////////////////////////////////////////////////////////////
+		 *  raise_clk_rate();
 			MAP_Interrupt_enableInterrupt(INT_TA3_N);
 			SPI_Collect_Data();
 			MAP_Interrupt_disableInterrupt(INT_TA3_N);
@@ -244,7 +243,7 @@ void main(void)
 		//     -- EMG[CHANNEL][0]
 		///////////////////////////////////////////////////////////////////////
 			EMG_Condition_Data();
-
+			 lower_clk_rate();
 		///////////////////////////////////////////////////////////////////////
 		// Read Potentiometer and FSR
 		///////////////////////////////////////////////////////////////////////
@@ -259,7 +258,11 @@ void main(void)
         	b = resultsBuffer[1];//pin5.4 //ALTERNATE Pot
         	c = resultsBuffer[2];//pin5.3//FSR
         	d = resultsBuffer[3];//pin5.2//FSR
-
+        	int it;
+        	for(it = 0; it< 5 ;++it){
+        		ANGLE_ave = ANGLE_ave + ANGLE_deg[it];
+			}
+			ANGLE_ave = ANGLE_ave/5;
 		///////////////////////////////////////////////////////////////////////
 		// Angle Limit Dampening
 		///////////////////////////////////////////////////////////////////////
@@ -298,7 +301,7 @@ void main(void)
 			// EMG History Buffer
 			for(i=0;j<8;j++) for(j=EMG_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
 			// ANGLE History Buffer
-			for(i=ANGLE_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
+			for(i=ANGLE_History-1;i>0;i--) ANGLE_deg[i]=ANGLE_deg[i-1];
 			// MOTOR History Buffer
 			for(i=MOTOR_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
 */
@@ -325,12 +328,16 @@ void gpio_isr1(void)
     /* Toggling the output on the LED */
     if(status & GPIO_PIN1 )
     {
+    	lower_clk_rate();
     	if(Direction_flag == -1)
     		Direction_flag =1;
     	else
     		Direction_flag =-1;
 
+    }else{
+    	raise_clk_rate();
     }
+
 
 }
 
