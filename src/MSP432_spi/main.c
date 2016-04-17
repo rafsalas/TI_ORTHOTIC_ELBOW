@@ -39,6 +39,12 @@
 // MAIN ROUTINE
 ///////////////////////////
 
+// GLOBAL DEFINITIONS
+const uint8_t BICEPS = 0; // Biceps Electrode Number
+const uint8_t TRICEPS = 1; // Triceps Electrode Number
+const uint8_t FOREARM_I = 2; // Inner Forearm Electrode Number
+const uint8_t FOREARM_O = 3; // Outer Forearm Electrode Number
+
 // SPI     -> EMG Voltage -> EMG Coefficient
 // ADC POT -> Angle       -> Dampen Coefficient
 // ADC FSR -> Pressure    -> Safty Threshold Emergency Stop
@@ -47,8 +53,9 @@
 uint8_t Main_Routine_Rate_Flag = 0x00; // Flag for Main Routine Interrupt
 
 
-// SPI
 
+
+// SPI
 uint8_t Drdy = 0x00; //Flag for DRDY on SPI Channel
 uint8_t SPI_Cleared = 1; // Flag to Wait Until SPI Channel Clears
 uint8_t SPI_Connected = 0; // Flag to Wait Until SPI Initialiation Complete
@@ -57,7 +64,7 @@ uint8_t Read_flag = 0;
 uint16_t Calibration_History = 100;
 
 // EMG
-double EMG[8][50]; // 8 Channel History (Filtered, Rectified, Averaged)
+double EMG[8][100+11-1]; // 8 Channel History (Filtered, Rectified, Averaged)
 
 // NORMALIZATION ROUTINE
 double EMG_max[8]; // Maximum EMG Signal
@@ -173,9 +180,9 @@ void main(void)
 
 
 		// SPI SETUP
-			//spi_setup();
-			//spi_start();
-			//drdy_setup();
+			spi_setup();
+			spi_start();
+			drdy_setup();
 
 		// UART
 			uart_setup();
@@ -187,7 +194,7 @@ void main(void)
 			//setup_Motor_Driver();
 
 
-	/*while(1){
+	while(1){
 		__delay_cycles(100);
 
 
@@ -201,10 +208,8 @@ void main(void)
 
 
 
-	}*/
+	}
 
-	motor_test_setup();
-	drive_forward();
     while(1){
 		//motor_test();
     	//aux = CS_getSMCLK();
@@ -301,7 +306,11 @@ void main(void)
 			// EMG History Buffer
 			for(i=0;j<8;j++) for(j=EMG_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
 			// ANGLE History Buffer
+<<<<<<< HEAD
 			for(i=ANGLE_History-1;i>0;i--) ANGLE_deg[i]=ANGLE_deg[i-1];
+=======
+			for(i=ANGLE_History-1;j>0;j--) ANGLE_deg[i][j]=ANGLE_deg[i][j-1];
+>>>>>>> a49b62c4dcbd4b973e3d509e7b5f3d3a07053698
 			// MOTOR History Buffer
 			for(i=MOTOR_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
 */

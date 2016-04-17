@@ -61,7 +61,6 @@ void uart_setup(){
 }
 
 
-
 int *read_cal_angles(){
 	char low[3];
 	char high[3];
@@ -81,6 +80,7 @@ int *read_cal_angles(){
 	return angles;
 }
 
+
 void euscia2_isr(void)
 {
     uint32_t status = MAP_UART_getEnabledInterruptStatus(EUSCI_A2_MODULE);
@@ -92,7 +92,6 @@ void euscia2_isr(void)
         RXData = MAP_UART_receiveData(EUSCI_A2_MODULE);
         uint8_t itt;
         switch(RXData){
-
         	case 'a'://start cal process signal, start to gather data
         		for(itt = 0;itt<10;itt= itt+1){//clear buffer for limits
         			RxBuff[itt] = 0;
