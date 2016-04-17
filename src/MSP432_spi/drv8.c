@@ -111,7 +111,7 @@ void drive_motor(){
 	setup_PWM();
 	if(Direction_flag == -1){//increase angle/down
 		drive_reverse();
-	}else if (Direction_flag == -1){//decrease angle/up
+	}else if (Direction_flag == 1){//decrease angle/up
 		drive_forward();
 	}else{
 		//do nothing
