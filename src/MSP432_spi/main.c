@@ -184,7 +184,7 @@ void main(void)
 			//setup_adc();
 
 		// MOTOR SETUP
-			//setup_Motor_Driver();
+			setup_Motor_Driver();
 
 
 	while(1){
@@ -192,13 +192,16 @@ void main(void)
 
 
 		MAP_Interrupt_enableInterrupt(INT_TA3_N);
-
 		SPI_Collect_Data();
-
 		MAP_Interrupt_disableInterrupt(INT_TA3_N);
-
 		EMG_Condition_Data();
 
+		//Comparator();
+		//Upper_Arm_Intention
+		//Direction_flag
+
+		PWM1=1000*EMG[0][0];
+		PWM2=1000*EMG[0][0];
 
 
 	}
@@ -262,8 +265,7 @@ void main(void)
 		//      -- ANGLE_deg[0])
 		///////////////////////////////////////////////////////////////////////
 			read_adc(resultsBuffer);
-        	ANGLE_deg[0] = resultsBuffer[0];//pin5.5, Pot
-        	b = resultsBuffer[1];//pin5.4 //ALTERNATE Pot
+        	ANGLE_deg[0] = 0.5*(resultsBuffer[0]+resultsBuffer[1]); // pin5.5 + pin5.4 (Potentiometers)
         	c = resultsBuffer[2];//pin5.3//FSR
         	d = resultsBuffer[3];//pin5.2//FSR
 
@@ -305,7 +307,7 @@ void main(void)
 			// EMG History Buffer
 			for(i=0;j<8;j++) for(j=EMG_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
 			// ANGLE History Buffer
-			for(i=ANGLE_History-1;j>0;j--) ANGLE_deg[i][j]=ANGLE_deg[i][j-1];
+			for(i=ANGLE_History-1;j>0;j--) ANGLE_deg[i][j]=A[i][j-1];
 			// MOTOR History Buffer
 			for(i=MOTOR_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
 */
