@@ -620,7 +620,7 @@ void EMG_Condition_Data(void)
 		average = sum/(N_WIN-1-N_FIR_HP); // Average Middle of Convolution
 
 		// Dynamic EMG Maximum
-		if(average>EMG_max[i] || EMG_max[i]==0) EMG_max[i]=average;
+		if((average>EMG_max[i] || EMG_max[i]==0)&&EMG_i>10) EMG_max[i]=average;
 
 		// Dynamic EMG Minimum
 		if(average<EMG_min[i] || EMG_min[i]==0) EMG_min[i]=average;
@@ -641,6 +641,8 @@ void EMG_Condition_Data(void)
 
 		// Bound EMG at 0
 		if(EMG[i][0] <= 0) EMG[i][0] = 0;
+
+		EMG_i=EMG_i+1;
 	}
 
 }

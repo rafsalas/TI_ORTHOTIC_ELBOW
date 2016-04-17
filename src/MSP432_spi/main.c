@@ -178,45 +178,54 @@ void main(void)
 			//Bluetooth
 			//Bluetooth
 
-
 		// SPI SETUP
-			spi_setup();
-			spi_start();
-			drdy_setup();
+			raise_clk_rate(); // 48 MHz
+			spi_setup(); // Setup SPI Communication
+			spi_start(); // Setup ADS1299 Registers
+			drdy_setup(); // Setup
+			lower_clk_rate(); // 12 MHz
 
 		// UART
-			uart_setup();
+			//uart_setup();
 
 		// ADC
 			//setup_adc();
 
 		// MOTOR SETUP
-			setup_Motor_Driver();
+			//setup_Motor_Driver();
+
+
 
 
 	while(1){
-		__delay_cycles(100);
+		__delay_cycles(1000);
 
-
+		raise_clk_rate();
 		MAP_Interrupt_enableInterrupt(INT_TA3_N);
 		SPI_Collect_Data();
 		MAP_Interrupt_disableInterrupt(INT_TA3_N);
 		EMG_Condition_Data();
+		lower_clk_rate();
 
+		// Comparator Test
 		//Comparator();
-		//Upper_Arm_Intention
-		//Direction_flag
+		//PWM1=1000*Upper_Arm_Intention;
+		//PWM2=1000*Upper_Arm_Intention;
 
-		PWM1=1000*EMG[0][0];
-		PWM2=1000*EMG[0][0];
+		// Angle Limit Test
+/*
+		Direction_flag=1;
 
-
+		PWM1=1000*EMG[BICEPS][0];
+		PWM2=1000*EMG[TRICEPS][0];
+		drive_motor();
+*/    	aux = CS_getSMCLK();
+    	clk = CS_getMCLK();
 	}
 
     while(1){
 		//motor_test();
-    	//aux = CS_getSMCLK();
-    	clk = CS_getSMCLK();
+
 		//MAP_Interrupt_enableInterrupt(INT_TA3_N);
 
 		//SPI_Collect_Data();
