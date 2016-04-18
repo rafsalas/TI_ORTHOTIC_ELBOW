@@ -43,8 +43,6 @@ void setup_Motor_Driver(){
 }
 
 void setup_PWM(){
-	//PWM1 = 500*Upper_Arm_Intention*ANGLE_damp;
-	//PWM2 = 500*Upper_Arm_Intention*ANGLE_damp;
     pwmConfig0.clockSource = TIMER_A_CLOCKSOURCE_ACLK;
     pwmConfig0.clockSourceDivider = TIMER_A_CLOCKSOURCE_DIVIDER_1;
     pwmConfig0.timerPeriod = CLK_PERIOD;
