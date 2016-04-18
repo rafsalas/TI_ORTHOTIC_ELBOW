@@ -11,7 +11,7 @@
         android:id="@+id/textView1"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Elbow Orthosis"
+        android:text="TI Elbow Orthosis"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:layout_gravity="center_horizontal"
         android:textSize="30dp" />
@@ -20,7 +20,7 @@
         android:id="@+id/textView2"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Texas A+M University"
+        android:text="Texas A&amp;M University"
         android:textAppearance="?android:attr/textAppearanceLarge"
         android:layout_gravity="center_horizontal"
         android:textSize="20dp" />
@@ -84,68 +84,65 @@
         android:id="@+id/button1"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:text="Calibration Routine" />
+        android:text="Personalize Orthosis" />
 
 
 
+    <!--<LinearLayout android:id="@+id/seekbar_placeholder"-->
+        <!--android:orientation="vertical"-->
+        <!--android:layout_width="fill_parent"-->
+        <!--android:layout_height="wrap_content"/>-->
 
+    <!--<TextView-->
+        <!--android:layout_width="fill_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="Range seek bar from xml with default range"-->
+        <!--/>-->
 
+    <!--<com.n8k9.ti_elbow.ti_elbow.RangeSeekBar-->
+        <!--android:layout_width="fill_parent"-->
+        <!--android:textColor="#00FF00"-->
+        <!--android:layout_height="wrap_content"/>-->
 
-    <LinearLayout android:id="@+id/seekbar_placeholder"
-        android:orientation="vertical"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"/>
+    <!--<TextView-->
+        <!--android:layout_width="fill_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="Range seek bar from xml with ranges set"-->
+        <!--/>-->
 
-    <TextView
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="Range seek bar from xml with default range"
-        />
+    <!--<com.n8k9.ti_elbow.ti_elbow.RangeSeekBar-->
+        <!--android:layout_width="fill_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--rsb:absoluteMinValue="20"-->
+        <!--rsb:absoluteMaxValue="150"-->
+        <!--/>-->
 
-    <com.n8k9.ti_elbow.ti_elbow.RangeSeekBar
-        android:layout_width="fill_parent"
-        android:textColor="#00FF00"
-        android:layout_height="wrap_content"/>
+    <!--<TextView-->
+        <!--android:layout_width="fill_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="Range seek bar from xml with ranges set and double values"-->
+        <!--/>-->
 
-    <TextView
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="Range seek bar from xml with ranges set"
-        />
+    <!--<com.n8k9.ti_elbow.ti_elbow.RangeSeekBar-->
+        <!--android:layout_width="fill_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--rsb:absoluteMinValue="15.23"-->
+        <!--rsb:absoluteMaxValue="140.54"-->
+        <!--/>-->
 
-    <com.n8k9.ti_elbow.ti_elbow.RangeSeekBar
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        rsb:absoluteMinValue="20"
-        rsb:absoluteMaxValue="150"
-        />
+    <!--<TextView-->
+        <!--android:layout_width="fill_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="Range seek bar from xml with single thumb to true"-->
+        <!--/>-->
 
-    <TextView
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="Range seek bar from xml with ranges set and double values"
-        />
-
-    <com.n8k9.ti_elbow.ti_elbow.RangeSeekBar
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        rsb:absoluteMinValue="15.23"
-        rsb:absoluteMaxValue="140.54"
-        />
-
-    <TextView
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="Range seek bar from xml with single thumb to true"
-        />
-
-    <com.n8k9.ti_elbow.ti_elbow.RangeSeekBar
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        rsb:absoluteMinValue="20"
-        rsb:absoluteMaxValue="150"
-        rsb:singleThumb="true"
-        />
+    <!--<com.n8k9.ti_elbow.ti_elbow.RangeSeekBar-->
+        <!--android:layout_width="fill_parent"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--rsb:absoluteMinValue="20"-->
+        <!--rsb:absoluteMaxValue="150"-->
+        <!--rsb:singleThumb="true"-->
+        <!--/>-->
 
 
 

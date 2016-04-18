@@ -16,7 +16,7 @@
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true" />
 
-    <LinearLayout android:id="@+id/seekbar_placeholder"
+    <LinearLayout android:id="@+id/seekbar2"
         android:orientation="vertical"
         android:layout_below="@+id/RelativeLayout01"
         android:layout_width="fill_parent"
@@ -41,8 +41,8 @@
 
         <Button
             android:id="@+id/button_up_LowerLimit"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:text="+"
             android:textSize="10dp"
             android:layout_gravity="center_horizontal"
@@ -52,8 +52,8 @@
 
         <Button
             android:id="@+id/button_up_UpperLimit"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:text="+"
             android:textSize="10dp"
             android:layout_gravity="center_horizontal"
@@ -76,8 +76,8 @@
 
         <Button
             android:id="@+id/button_down_UpperLimit"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:text="-"
             android:textSize="10dp"
             android:layout_gravity="center_horizontal"
@@ -89,8 +89,8 @@
 
         <Button
             android:id="@+id/button_down_LowerLimit"
-            android:layout_width="30dp"
-            android:layout_height="30dp"
+            android:layout_width="50dp"
+            android:layout_height="50dp"
             android:text="-"
             android:textSize="10dp"
             android:layout_gravity="center_horizontal"
