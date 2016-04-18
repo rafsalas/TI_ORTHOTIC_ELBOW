@@ -15,7 +15,7 @@
  *      5.1 = enable
  *      5.0 = fault
  *
- *      CLK = SMCLK
+ *      CLK = ACLK
  *
  */
 

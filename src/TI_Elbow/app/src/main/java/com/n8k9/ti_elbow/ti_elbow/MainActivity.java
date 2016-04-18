@@ -21,17 +21,17 @@ public class MainActivity extends Activity {
         addListenerOnButton();
 
 
-        // Setup the new range seek bar
-        RangeSeekBar<Integer> rangeSeekBar = new RangeSeekBar<Integer>(this);
-        // Set the range
-        rangeSeekBar.setRangeValues(0, 180);
-        rangeSeekBar.setSelectedMinValue(60);
-        rangeSeekBar.setSelectedMaxValue(120);
-
-        // Add to layout
-        LinearLayout layout = (LinearLayout) findViewById(R.id.seekbar_placeholder);
-        layout.addView(rangeSeekBar);
-        //layout.setBackgroundColor(Color.BLACK);
+//        // Setup the new range seek bar
+//        RangeSeekBar<Integer> rangeSeekBar = new RangeSeekBar<Integer>(this);
+//        // Set the range
+//        rangeSeekBar.setRangeValues(0, 180);
+//        rangeSeekBar.setSelectedMinValue(60);
+//        rangeSeekBar.setSelectedMaxValue(120);
+//
+//        // Add to layout
+//        LinearLayout layout = (LinearLayout) findViewById(R.id.seekbar_placeholder);
+//        layout.addView(rangeSeekBar);
+//        //layout.setBackgroundColor(Color.BLACK);
 
     }
 

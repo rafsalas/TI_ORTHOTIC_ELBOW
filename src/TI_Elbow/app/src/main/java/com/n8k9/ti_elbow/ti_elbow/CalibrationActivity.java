@@ -77,7 +77,7 @@ public class CalibrationActivity extends Activity {
         rangeSeekBar.setSelectedMaxValue(120);
 
         // Add to Layout
-        LinearLayout layout = (LinearLayout) findViewById(R.id.seekbar_placeholder);
+        LinearLayout layout = (LinearLayout) findViewById(R.id.seekbar2);
         layout.addView(rangeSeekBar);
         //layout.setBackgroundColor(Color.BLACK);
 
@@ -241,14 +241,14 @@ public class CalibrationActivity extends Activity {
     private void timer_sequence()
     {
 
-
+        v.vibrate(500);
         // First Timer
         new CountDownTimer(5000, 200){
             public void onTick(long millisUntilFinished){
 
-                long buzz_pattern[] = new long[2];
-                Arrays.fill(buzz_pattern, 100);
-                v.vibrate(buzz_pattern,-1);
+//                long buzz_pattern[] = new long[2];
+//                Arrays.fill(buzz_pattern, 100);
+//                v.vibrate(buzz_pattern,-1);
 
                 Line_1="Prepare to Flex\n";
                 Line_2="Forearm at 90* in\n";
@@ -262,15 +262,15 @@ public class CalibrationActivity extends Activity {
             public void onFinish() {
 
 
-
+                v.vibrate(500);
                 // Second Timer
                 new CountDownTimer(10000, 500){
                     public void onTick(long millisUntilFinished){
-                        long buzz_pattern[] = new long[2];
-                        Arrays.fill(buzz_pattern, 250);
-                        v.vibrate(buzz_pattern,-1);
+//                        long buzz_pattern[] = new long[2];
+//                        Arrays.fill(buzz_pattern, 250);
+//                        v.vibrate(buzz_pattern,-1);
 
-                        Line_1="Flex Forearm for\n";
+                        Line_1="Flex Bicep for\n";
                         Line_2=Long.toString(millisUntilFinished/1000)+"   Seconds\n";
                         Line_3="\n";
                         Line_4="\n";
@@ -281,9 +281,9 @@ public class CalibrationActivity extends Activity {
 
                     public void onFinish() {
 
-                        long buzz_pattern[] = new long[4];
-                        Arrays.fill(buzz_pattern, 1000);
-                        v.vibrate(buzz_pattern,-1);
+//                        long buzz_pattern[] = new long[4];
+//                        Arrays.fill(buzz_pattern, 1000);
+//                        v.vibrate(buzz_pattern,-1);
 
                         txt_Timer.setText("Calibration Complete");
                     }
