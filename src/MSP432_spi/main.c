@@ -178,14 +178,15 @@ void main(void)
 			//Bluetooth
 			//Bluetooth
 
-
 		// SPI SETUP
-			spi_setup();
-			spi_start();
-			drdy_setup();
+			raise_clk_rate(); // 48 MHz
+			spi_setup(); // Setup SPI Communication
+			spi_start(); // Setup ADS1299 Registers
+			drdy_setup(); // Setup
+			lower_clk_rate(); // 12 MHz
 
 		// UART
-			uart_setup();
+			//uart_setup();
 
 		// ADC
 			//setup_adc();
@@ -194,26 +195,37 @@ void main(void)
 			//setup_Motor_Driver();
 
 
+
+
 	while(1){
-		__delay_cycles(100);
+		__delay_cycles(1000);
 
-
+		raise_clk_rate();
 		MAP_Interrupt_enableInterrupt(INT_TA3_N);
-
 		SPI_Collect_Data();
-
 		MAP_Interrupt_disableInterrupt(INT_TA3_N);
-
 		EMG_Condition_Data();
+		lower_clk_rate();
 
+		// Comparator Test
+		//Comparator();
+		//PWM1=1000*Upper_Arm_Intention;
+		//PWM2=1000*Upper_Arm_Intention;
 
+		// Angle Limit Test
+/*
+		Direction_flag=1;
 
+		PWM1=1000*EMG[BICEPS][0];
+		PWM2=1000*EMG[TRICEPS][0];
+		drive_motor();
+*/    	aux = CS_getSMCLK();
+    	clk = CS_getMCLK();
 	}
 
     while(1){
 		//motor_test();
-    	//aux = CS_getSMCLK();
-    	clk = CS_getSMCLK();
+
 		//MAP_Interrupt_enableInterrupt(INT_TA3_N);
 
 		//SPI_Collect_Data();
@@ -259,8 +271,7 @@ void main(void)
 		//      -- ANGLE_deg[0])
 		///////////////////////////////////////////////////////////////////////
 			read_adc(resultsBuffer);
-        	ANGLE_deg[0] = resultsBuffer[0];//pin5.5, Pot
-        	b = resultsBuffer[1];//pin5.4 //ALTERNATE Pot
+        	ANGLE_deg[0] = 0.5*(resultsBuffer[0]+resultsBuffer[1]); // pin5.5 + pin5.4 (Potentiometers)
         	c = resultsBuffer[2];//pin5.3//FSR
         	d = resultsBuffer[3];//pin5.2//FSR
         	int it;
@@ -306,11 +317,7 @@ void main(void)
 			// EMG History Buffer
 			for(i=0;j<8;j++) for(j=EMG_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
 			// ANGLE History Buffer
-<<<<<<< HEAD
 			for(i=ANGLE_History-1;i>0;i--) ANGLE_deg[i]=ANGLE_deg[i-1];
-=======
-			for(i=ANGLE_History-1;j>0;j--) ANGLE_deg[i][j]=ANGLE_deg[i][j-1];
->>>>>>> a49b62c4dcbd4b973e3d509e7b5f3d3a07053698
 			// MOTOR History Buffer
 			for(i=MOTOR_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
 */
