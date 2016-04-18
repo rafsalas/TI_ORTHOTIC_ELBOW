@@ -9,11 +9,12 @@
 #define CALIBRATE_H_
 #include <driverlib.h>
 
-extern int ANGLE_max;
-extern int ANGLE_min;
+extern double ANGLE_max;
+extern double ANGLE_min;
 extern uint8_t Cal_Request;
 extern uint8_t Read_flag;
 extern uint16_t Calibration_History;
+void reset_position();
 void calibration();
 
 

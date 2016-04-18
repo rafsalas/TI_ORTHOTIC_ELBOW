@@ -6,10 +6,17 @@
 #include "ADC_Sensors.h"
 #include <string.h>
 
+// Hard-Coded ADC Calibration
+uint16_t POT1_ADC90 = 8500; // Potentiometer 1 ADC Value at 90 Degrees (Inside Pot)
+uint16_t POT1_ADC180 = 16383; // Potentiometer 1 ADC Value at 180 Degrees (Inside Pot)
+uint16_t POT2_ADC90 = 8500; // Potentiometer 2 ADC Value at 90 Degrees (Outside Pot)
+uint16_t POT2_ADC180 = 16383; // Potentiometer 2 ADC Value at 180 Degrees (Outside Pot)
+
+
 void setup_adc(){
 
     /* Setting reference voltage to 2.5  and enabling reference */
-   REF_A_setReferenceVoltage(REF_A_VREF2_5V);
+    REF_A_setReferenceVoltage(REF_A_VREF2_5V);
     MAP_REF_A_enableReferenceVoltage();
 
     MAP_ADC14_enableModule();
@@ -39,11 +46,12 @@ void setup_adc(){
 
 void read_adc(uint16_t *adcBuffer){
 	uint16_t tempBuffer [4];
+
     /* Zero-filling buffer */
     memset(tempBuffer, 0x00, 4);
     MAP_ADC14_getMultiSequenceResult(tempBuffer);
-    adcBuffer[0] = tempBuffer[0]/91.0166;
-    adcBuffer[1] = tempBuffer[1]/91.0166;
-    adcBuffer[2] = tempBuffer[2]/1638.3;
-    adcBuffer[3] = tempBuffer[3]/1638.3;
+    adcBuffer[0] = (180.0-90.0)/(POT1_ADC180-POT1_ADC90)*((uint16_t)tempBuffer[0]-POT1_ADC90)+90.0; // Potentiometer 1
+    adcBuffer[1] = (180.0-90.0)/(POT2_ADC180-POT2_ADC90)*((uint16_t)tempBuffer[1]-POT2_ADC90)+90.0; // Potentiometer 2
+    adcBuffer[2] = tempBuffer[2]; // FSR 1
+    adcBuffer[3] = tempBuffer[3]; // FSR 2
 }

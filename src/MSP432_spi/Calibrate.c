@@ -10,27 +10,89 @@
 #include "Calibrate.h"
 #include "UART_COMMS.h"
 #include "SPI_COMMS.h"
+#include "ADC_Sensors.h"
+#include "drv8.h"
+
+extern uint16_t resultsBuffer[4];
+extern uint16_t PWM1;
+extern uint16_t PWM2;
+extern double ANGLE_deg[50];
+
+
+
+volatile left_loop = 0;
+
+void reset_position(){
+	// Reset Position
+	read_adc(resultsBuffer);
+	ANGLE_deg[0] = 0.5*(resultsBuffer[0]+resultsBuffer[0]);
+
+	double ANGLE_set = 0.5*(ANGLE_max-ANGLE_min)+ANGLE_min;
+
+	while(ANGLE_deg[0]<ANGLE_set-10 || ANGLE_deg[0]>ANGLE_set+10){
+		read_adc(resultsBuffer);
+		ANGLE_deg[0] = 0.5*(resultsBuffer[0]+resultsBuffer[0]);
+		if(ANGLE_deg[0]<ANGLE_set)
+		{
+			Direction_flag = 1;
+		}else if(ANGLE_deg[0]>ANGLE_set)
+		{
+			Direction_flag =-1;
+		}
+
+		PWM1=200;
+		PWM2=200;
+		drive_motor();
+
+	}
+	left_loop =1;
+}
+
 
 void calibration(){
-	while(Read_flag != 1);
-	int *temp = read_cal_angles();
-	ANGLE_min = temp[0];
-	ANGLE_max = temp[1];
-	Read_flag = 0;
-	int i;
+
+	while(Read_flag != 1); // Trap Until Bluetooth Buffer Read
+	int *temp = read_cal_angles(); // Read Buffer Contents
+	ANGLE_min = temp[0]; // Read Minimum Angle
+	ANGLE_max = temp[1]; // Read Maximum Angle
+	Read_flag = 0; // Reset Read Flag
+	uint32_t i;
 	int j;
 
-	for(i = 0;i <Calibration_History ;++i){
+	uint32_t SMCLK_cycles = CS_getSMCLK(); // System Clock for Delay Cycles
+	uint32_t SMCLK_DIV100K = SMCLK_cycles/(100000); // Divide System Clock by 10,000 Full Cycles
+
+	left_loop = 0;
+
+	// 5 Second Delay (User Prompt in Android App)
+	for(i = 0; i < 5*SMCLK_DIV100K; i++) __delay_cycles(25000); // 5 Second Delay
+
+	left_loop = left_loop+1;
+
+	// 3 Second Delay (Center Calibration Signal in 10 Second Interval)
+	for(i = 0; i < 3*SMCLK_DIV100K; i++) __delay_cycles(25000); // 3 Second Delay
+
+	left_loop = left_loop+1;
+
+	/*
+	for(i = 0;i <Calibration_History ;++i)
+	{
 		SPI_Collect_Data();
 		EMG_Condition_Data();
-		for(j=0;j<8;++j){
+		for(j=0;j<8;++j)
+		{
 			EMG_max[i] = EMG_max[i] + EMG[i][0];
 		}
 	}
 	for(j=0;j<8;++j){
 		EMG_max[i] = EMG_max[i]/Calibration_History;
 	}
+	*/
 
+	reset_position();
+
+
+	left_loop = left_loop+1;
 	Cal_Request = 0;
 }
 

@@ -19,6 +19,8 @@ int32_t neg_pulse_count = 0;
 // ANGLE DAMPER LOOK-UP TABLES
 // NORMAL CDF BASIS
 const int N_DAMP = 20; // Order of Damping Look-Up Table
+
+// CENTERED NORMAL CDF
 double h_DAMP[20] = { // Coefficients in Damping Look-Up Table
 		0,
 		0.0637646354428060,
@@ -46,17 +48,21 @@ double h_DAMP[20] = { // Coefficients in Damping Look-Up Table
 
 void Angle_Dampen(){
 	uint32_t ANGLE_i;
+	double ANGLE_current = ANGLE_deg[0];
 
 	// Bound Angle Value between Minimum and Maximum Values
-	if(ANGLE_deg[0]>=ANGLE_max) ANGLE_deg[0] = ANGLE_max-0.5*(ANGLE_max-ANGLE_min)/N_DAMP;
-	if(ANGLE_deg[0]<=ANGLE_min) ANGLE_deg[0] = ANGLE_min+0.5*(ANGLE_max-ANGLE_min)/N_DAMP;
+	if(ANGLE_current>=ANGLE_max) ANGLE_current = ANGLE_max-0.5*(ANGLE_max-ANGLE_min)/N_DAMP;
+	if(ANGLE_current<=ANGLE_min) ANGLE_current = ANGLE_min+0.5*(ANGLE_max-ANGLE_min)/N_DAMP;
 
 	// Convert Measured Angle into Index for Lookup Table
-	ANGLE_i=(N_DAMP*((uint32_t)(ANGLE_deg[0]-ANGLE_min))/((uint32_t)(ANGLE_max-ANGLE_min)));
+	ANGLE_i=(N_DAMP*((uint32_t)(ANGLE_current-ANGLE_min))/((uint32_t)(ANGLE_max-ANGLE_min)));
 
 	// Produce Damping Coefficient from Normal CDF Curve
 	if(Direction_flag<0) ANGLE_damp=h_DAMP[ANGLE_i]; // Decreasing Angle (ELBOW CLOSING)
-	else            ANGLE_damp=h_DAMP[N_DAMP-ANGLE_i-1]; // Increasing Angle (ELBOW OPENING)
+	else                 ANGLE_damp=h_DAMP[N_DAMP-ANGLE_i-1]; // Increasing Angle (ELBOW OPENING)
+
+
+
 
 }
 

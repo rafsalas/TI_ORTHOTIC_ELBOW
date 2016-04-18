@@ -51,6 +51,7 @@ const double Reference_Voltage = 2.5; // 2.5V Reference Voltage
 const double ADC_Amplifier = 1; // Amplification Coefficient
 double EMG_Convolution[100+11-1]; // Convolution Result
 double EMG_Process[8][100+11-1];
+double EMG_Process_2[8][100+11-1];
 
 
 // DSP PARAMETERS
@@ -620,18 +621,18 @@ void EMG_Condition_Data(void)
 		average = sum/(N_WIN-1-N_FIR_HP); // Average Middle of Convolution
 
 		// Dynamic EMG Maximum
-		if((average>EMG_max[i] || EMG_max[i]==0)&&EMG_i>10) EMG_max[i]=average;
+		if((average>EMG_max[i] || EMG_max[i]==0) && EMG_i>10) EMG_max[i]=average;
 
 		// Dynamic EMG Minimum
 		if(average<EMG_min[i] || EMG_min[i]==0) EMG_min[i]=average;
-
-
 
 		// EMG History Buffer
 		for(j=EMG_History-1;j>0;j--)
 		{
 			EMG[i][j]=EMG[i][j-1];
 		}
+
+
 
 		// Normalize
 		EMG[i][0]=(average-EMG_min[i])/(EMG_max[i]-EMG_min[i]);
@@ -641,6 +642,11 @@ void EMG_Condition_Data(void)
 
 		// Bound EMG at 0
 		if(EMG[i][0] <= 0) EMG[i][0] = 0;
+
+
+
+
+
 
 		EMG_i=EMG_i+1;
 	}
@@ -672,15 +678,37 @@ void Convolution(void)
 
 
 void Comparator(){
-	// Compare Normalized Biceps and Triceps EMG Signals
-	if(EMG[BICEPS][0] > EMG[TRICEPS][0]) // More Active Biceps Signal -> Use Biceps Signal, Decrease Angle
+	int i, j;
+	double sum;
+	double EMG_avg[8];
+
+	for(i=0;i<NUM_ACTIVE_CHANNELS;i++)
 	{
-		Upper_Arm_Intention = EMG[0][0];
+		// EMG Moving Average
+		sum=0;
+		for(j=0;j<EMG_History;j++) sum=sum+EMG[i][j];
+		EMG_avg[i]=sum/EMG_History;
+
+		// Linear Calibration
+		//if(i==BICEPS) EMG_avg[i]=2*EMG_avg[i]-0.1;
+		//if(i==TRICEPS) EMG_avg[i]=2*EMG_avg[i]-0.1;
+
+	}
+
+
+
+
+
+
+	// Compare Normalized Biceps and Triceps EMG Signals
+	if(EMG_avg[BICEPS] > EMG_avg[TRICEPS]) // More Active Biceps Signal -> Use Biceps Signal, Decrease Angle
+	{
+		Upper_Arm_Intention = EMG_avg[BICEPS];
 		Direction_flag = -1;
 	}
-	else if(EMG[BICEPS][0] < EMG[TRICEPS][0]) // More Active Triceps Signal -> Use Triceps Signal, Increase Angle
+	else if(EMG_avg[BICEPS] < EMG_avg[TRICEPS]) // More Active Triceps Signal -> Use Triceps Signal, Increase Angle
 	{
-		Upper_Arm_Intention = EMG[TRICEPS][0];
+		Upper_Arm_Intention = EMG_avg[TRICEPS];
 		Direction_flag = 1;
 	}
 	else // Equal Intensity Signals
@@ -689,14 +717,7 @@ void Comparator(){
 		Direction_flag = 0;
 	}
 
-	/*
-	if(EMG[2][0] > EMG[3][0]){ //forearm top intention
-		Lower_Arm_Intention = EMG[2][0];
-	}else if(EMG[2][0] < EMG[3][0]){//forearm bottom intention
-		Lower_Arm_Intention = EMG[3][0];
-	}else{
-		Lower_Arm_Intention = 0;
-	}*/
+
 
 }
 

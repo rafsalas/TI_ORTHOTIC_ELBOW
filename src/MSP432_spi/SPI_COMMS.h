@@ -17,7 +17,8 @@
 // USER VARIABLES
 #define NUM_CHANNELS 8 // Number of Signal Channels
 #define NUM_ACTIVE_CHANNELS 4 // Number of Active Signal Channels
-#define EMG_History 100+11-1 // EMG Data History
+
+extern int EMG_History; // EMG Data History
 
 extern const uint8_t BICEPS; // Biceps Array Index
 extern const uint8_t TRICEPS; // Triceps Array Index

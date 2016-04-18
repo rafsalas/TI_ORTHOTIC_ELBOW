@@ -30,9 +30,9 @@ void uart_setup(){
 	{
 			//9600 baud rate at smclk = 3MHz
 	        EUSCI_A_UART_CLOCKSOURCE_SMCLK,          // SMCLK Clock Source
-	        19,                                     //
+	        19,                                      //
 	        8,                                       //
-	        85,                                       //
+	        85,                                      //
 	        EUSCI_A_UART_NO_PARITY,                  // No Parity
 	        EUSCI_A_UART_LSB_FIRST,                  // LSB First
 	        EUSCI_A_UART_ONE_STOP_BIT,               // One stop bit
@@ -59,7 +59,7 @@ void uart_setup(){
     MAP_Interrupt_enableInterrupt(INT_EUSCIA2);
     MAP_Interrupt_enableMaster();
 }
-
+volatile int l,h =0;
 
 int *read_cal_angles(){
 	char low[3];
@@ -77,6 +77,8 @@ int *read_cal_angles(){
 	int *angles= (int *) malloc(2);
 	sscanf(low, "%d", &angles[0]);
 	sscanf(high, "%d", &angles[1]);
+	l = angles[0];
+	h = angles[1];
 	return angles;
 }
 
@@ -106,7 +108,7 @@ void euscia2_isr(void)
         		MAP_UART_transmitData(EUSCI_A2_MODULE, 'r');//send recieve bit
         		GPIO_toggleOutputOnPin(GPIO_PORT_P1, GPIO_PIN0);
         		break;
-        	case 's':
+        	case 'r':
         		//back up
         		break;
         	default:
