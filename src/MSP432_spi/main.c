@@ -155,7 +155,8 @@ void main(void)
 	int i, j;
 	double sum;
 	MAP_WDT_A_holdTimer();
-
+    MAP_GPIO_setAsOutputPin(GPIO_PORT_P5, GPIO_PIN2);//nsleep
+    GPIO_setOutputLowOnPin(GPIO_PORT_P5, GPIO_PIN2);
 	// INITIALIZATION
 
 		// SPI SETUP (ADS1299)
@@ -271,11 +272,6 @@ void main(void)
 		// Comparator Test
 		//Comparator();
 
-
-
-
-
-
 		read_adc(resultsBuffer);
 		ANGLE_deg[0] = resultsBuffer[0];//0.5*(resultsBuffer[0]+resultsBuffer[1]); // PIN5.5 + PIN5.4 (Potentiometers)
 
@@ -320,9 +316,10 @@ void main(void)
 		///////////////////////////////////////////////////////////////////////
 		    raise_clk_rate();
 			MAP_Interrupt_enableInterrupt(INT_TA3_N);
+			MAP_Interrupt_enableInterrupt(INT_EUSCIA2);
 			SPI_Collect_Data();
 			MAP_Interrupt_disableInterrupt(INT_TA3_N);
-
+			MAP_Interrupt_disableInterrupt(INT_EUSCIA2);
 
 		///////////////////////////////////////////////////////////////////////
 		// Condition EMG Data
