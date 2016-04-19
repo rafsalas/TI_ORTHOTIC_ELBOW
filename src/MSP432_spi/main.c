@@ -62,7 +62,7 @@ uint8_t SPI_Cleared = 1; // Flag to Wait Until SPI Channel Clears
 uint8_t SPI_Connected = 0; // Flag to Wait Until SPI Initialiation Complete
 uint8_t Cal_Request = 0;
 uint8_t Read_flag = 0;
-uint16_t Calibration_History = 100;
+uint16_t Calibration_History = 50;
 
 // SENSORS
 // FSRs
@@ -160,13 +160,13 @@ void main(void)
 	// INITIALIZATION
 
 		// SPI SETUP (ADS1299)
-			/*
+/*
 			raise_clk_rate(); // 48 MHz
 			spi_setup(); // Setup SPI Communication
 			spi_start(); // Setup ADS1299 Registers
 			drdy_setup(); // Setup
 			lower_clk_rate(); // 12 MHz
-			*/
+*/
 
 		// ADC SETUP (Potentiometers and Force Sensitive Resistors)
 			setup_adc();
@@ -177,25 +177,62 @@ void main(void)
 			Direction_flag=1; // Initialize Motors to Open Direction
 			setup_Motor_Driver();
 
+
 		// PUSH BUTTON SETUP (Direction Change)
 		    MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);//push buttons pin1 push = toggle direction flag
 		    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);//pin 4 push does nothing
 		    MAP_GPIO_enableInterrupt(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);
 		    MAP_Interrupt_enableInterrupt(INT_PORT1);
-		    /* Enabling MASTER interrupts */
+		    // Enabling MASTER interrupts
 		    MAP_Interrupt_enableMaster();
 
+
+
 		// UART (Bluetooth)
+			lower_clk_rate();
 			uart_setup();
 
 		// Calibration Routine
 		    while(Cal_Request!=1);
+			lower_clk_rate();
 			calibration();
+
+			__delay_cycles(5000000);
+
+
+	// DEMO ROUTINE (WITH EMG ONLY)
+	// SHOW EMG OUTPUT AND PROCESSING GRAPHS
+	while(0)
+	{
+		__delay_cycles(10000);
+
+
+		// RAISE CLOCK RATE (12 MHz -> 48 MHz)
+		raise_clk_rate();
+
+		// ENABLE DRDY INTERRUPT
+		MAP_Interrupt_enableInterrupt(INT_TA3_N);
+
+		// COLLECT SPI DATA
+		SPI_Collect_Data();
+
+		// DISABLE DRDY INTERRUPT
+		MAP_Interrupt_disableInterrupt(INT_TA3_N);
+
+		// CONDITION DATA
+		EMG_Condition_Data();
+
+		// COMPARATOR
+		//Comparator();
+
+		// LOWER CLOCK RATE (48 MHz -> 12 MHz)
+		//lower_clk_rate();
+	}
 
 
 	// DEMO ROUTINE (WITHOUT EMG)
 	// OSCILLATE BETWEEN DYNAMIC ANGLE LIMITS
-	while(0)
+	while(1)
 	{
 		__delay_cycles(100000);
 
@@ -226,31 +263,8 @@ void main(void)
 
 	}
 
-	// DEMO ROUTINE (WITH EMG ONLY)
-	// SHOW EMG OUTPUT AND PROCESSING GRAPHS
-	while(0)
-	{
-		// RAISE CLOCK RATE (12 MHz -> 48 MHz)
-		raise_clk_rate();
-
-		// ENABLE DRDY INTERRUPT
-		MAP_Interrupt_enableInterrupt(INT_TA3_N);
-
-		// COLLECT SPI DATA
-		SPI_Collect_Data();
-
-		// DISABLE DRDY INTERRUPT
-		MAP_Interrupt_disableInterrupt(INT_TA3_N);
-
-		// CONDITION DATA
-		EMG_Condition_Data();
-
-		// LOWER CLOCK RATE (48 MHz -> 12 MHz)
-		lower_clk_rate();
-	}
-
 	// TEST LOOP
-	while(1){
+	while(0){
 		// Check for Calibration Signal
 		if(Cal_Request==1)	calibration();
 
@@ -403,7 +417,7 @@ void main(void)
 
 		// HISTORY BUFFER (QUEUE)
 			// EMG History Buffer
-			for(i=0;j<8;j++) for(j=EMG_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
+			//for(i=0;j<8;j++) for(j=EMG_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
 			// ANGLE History Buffer
 			for(i=ANGLE_History-1;i>0;i--) ANGLE_deg[i]=ANGLE_deg[i-1];
 			// MOTOR History Buffer
