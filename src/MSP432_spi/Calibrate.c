@@ -58,6 +58,7 @@ void calibration(){
 	Read_flag = 0; // Reset Read Flag
 	uint32_t i;
 	int j;
+	int k;
 
 	uint32_t SMCLK_cycles = CS_getSMCLK(); // System Clock for Delay Cycles
 	uint32_t SMCLK_DIV100K = SMCLK_cycles/(100000); // Divide System Clock by 10,000 Full Cycles
@@ -74,20 +75,28 @@ void calibration(){
 
 	left_loop = left_loop+1;
 
-	/*
-	for(i = 0;i <Calibration_History ;++i)
+
+	//////
+	// EMG
+	//////
+/*
+	raise_clk_rate();
+
+	// Reset Minimum EMG Signal
+	for(i = 0; i < NUM_ACTIVE_CHANNELS; i++) EMG_max[i] = 0; // Average EMG Data
+
+	// Average Multiple Windows
+	for(k = 0; k < Calibration_History ;++k)
 	{
-		SPI_Collect_Data();
-		EMG_Condition_Data();
-		for(j=0;j<8;++j)
-		{
-			EMG_max[i] = EMG_max[i] + EMG[i][0];
-		}
+		SPI_Collect_Data(); // Collect EMG Data
+		EMG_Condition_Data(); // Condition EMG Data
+		for(i = 0; i < NUM_ACTIVE_CHANNELS; ++i) for(j=0;j<EMG_History;j++)	EMG_max[i] = EMG_max[i] + EMG[i][j]; // Sum EMG Data
 	}
-	for(j=0;j<8;++j){
-		EMG_max[i] = EMG_max[i]/Calibration_History;
-	}
-	*/
+
+	for(i = 0; i < NUM_ACTIVE_CHANNELS; i++) EMG_max[i] = EMG_max[i]/(EMG_History*Calibration_History); // Average EMG Data
+	lower_clk_rate();
+*/
+
 
 	reset_position();
 

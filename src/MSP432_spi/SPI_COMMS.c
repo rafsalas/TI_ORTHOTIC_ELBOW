@@ -35,6 +35,8 @@ volatile uint16_t MISC1_reg = 0;
 volatile uint16_t MISC2_reg = 0;
 
 
+// CALIBRATION DATA
+extern uint8_t Cal_Request;
 
 
 // SPI DATA
@@ -143,6 +145,11 @@ void spi_setup(){
    /* Delaying waiting for the module to initialize */
 	__delay_cycles(500);
 
+   // Setup Green LED
+   MAP_GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN1);
+   GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN1);
+
+
 }
 
 
@@ -241,13 +248,13 @@ void spi_write_registers(){
 	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x80); // Channel OFF
 
 
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x20); // CH1SET Register
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x30); // CH1SET Register
 	__delay_cycles(1000);
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x20); // CH2SET Register
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x30); // CH2SET Register
 	__delay_cycles(1000);
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x20); // CH3SET Register
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x60); // CH3SET Register
 	__delay_cycles(1000);
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x20); // CH4SET Register
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x60); // CH4SET Register
 	__delay_cycles(1000);
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x80); // CH5SET Register (Off)
 	__delay_cycles(1000);
@@ -543,7 +550,13 @@ void SPI_Collect_Data(void)
 					if((container_1>>23)%2==1) container_2=-((1<<24)-container_1);
 					else container_2=container_1;
 
+
+
 					SPI_Data_Window[i][win_i]=container_2;
+
+					// Set Green LED if Max Out ADC
+					//if(SPI_Data_Window[i][win_i]==8388607 || SPI_Data_Window[i][win_i]==-8388608) GPIO_setOutputHighOnPin(GPIO_PORT_P2, GPIO_PIN1);
+
 				}
 
 				// CHECK BUFFER
@@ -620,17 +633,18 @@ void EMG_Condition_Data(void)
 		}
 		average = sum/(N_WIN-1-N_FIR_HP); // Average Middle of Convolution
 
-		// Dynamic EMG Maximum
-		if((average>EMG_max[i] || EMG_max[i]==0) && EMG_i>10) EMG_max[i]=average;
+		// Calibrate Static EMG Maximum
+		if( (Cal_Request==1) && (average>EMG_max[i] || EMG_max[i]==0) && (EMG_i>10) ) EMG_max[i]=average;
 
 		// Dynamic EMG Minimum
+		// Reassess Every 50 Windows
+		//if((EMG_i%50)==0)
+		//if(average<1.2*EMG_min[i]) EMG_min[i] = EMG_min[i]*1.1;
+
 		if(average<EMG_min[i] || EMG_min[i]==0) EMG_min[i]=average;
 
 		// EMG History Buffer
-		for(j=EMG_History-1;j>0;j--)
-		{
-			EMG[i][j]=EMG[i][j-1];
-		}
+		for(j=EMG_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
 
 
 
@@ -642,10 +656,6 @@ void EMG_Condition_Data(void)
 
 		// Bound EMG at 0
 		if(EMG[i][0] <= 0) EMG[i][0] = 0;
-
-
-
-
 
 
 		EMG_i=EMG_i+1;
@@ -699,7 +709,7 @@ void Comparator(){
 
 
 
-
+/*
 	// Compare Normalized Biceps and Triceps EMG Signals
 	if(EMG_avg[BICEPS] > EMG_avg[TRICEPS]) // More Active Biceps Signal -> Use Biceps Signal, Decrease Angle
 	{
@@ -716,7 +726,7 @@ void Comparator(){
 		Upper_Arm_Intention = 0;
 		Direction_flag = 0;
 	}
-
+*/
 
 
 }

@@ -17,5 +17,9 @@ extern uint16_t Calibration_History;
 void reset_position();
 void calibration();
 
+extern void	raise_clk_rate();
+extern void	lower_clk_rate();
+
+
 
 #endif /* CALIBRATE_H_ */
