@@ -19,7 +19,8 @@ extern uint16_t PWM2;
 extern double ANGLE_deg[50];
 
 
-
+volatile low =0;
+volatile high= 0;
 volatile left_loop = 0;
 
 void reset_position(){
@@ -40,9 +41,11 @@ void reset_position(){
 			Direction_flag =-1;
 		}
 
-		PWM1=200;
-		PWM2=200;
+		PWM1=400;
+		PWM2=400;
 		drive_motor();
+		__delay_cycles(10000);
+
 
 	}
 	left_loop =1;
@@ -55,6 +58,8 @@ void calibration(){
 	int *temp = read_cal_angles(); // Read Buffer Contents
 	ANGLE_min = temp[0]; // Read Minimum Angle
 	ANGLE_max = temp[1]; // Read Maximum Angle
+	low = ANGLE_min;
+	high = ANGLE_max;
 	Read_flag = 0; // Reset Read Flag
 	uint32_t i;
 	int j;
@@ -63,6 +68,12 @@ void calibration(){
 	uint32_t SMCLK_cycles = CS_getSMCLK(); // System Clock for Delay Cycles
 	uint32_t SMCLK_DIV100K = SMCLK_cycles/(100000); // Divide System Clock by 10,000 Full Cycles
 
+
+
+	//////
+	// EMG
+	//////
+/*
 	left_loop = 0;
 
 	// 5 Second Delay (User Prompt in Android App)
@@ -75,11 +86,6 @@ void calibration(){
 
 	left_loop = left_loop+1;
 
-
-	//////
-	// EMG
-	//////
-/*
 	raise_clk_rate();
 
 	// Reset Minimum EMG Signal
@@ -98,7 +104,7 @@ void calibration(){
 */
 
 
-	reset_position();
+	//reset_position();
 
 
 	left_loop = left_loop+1;

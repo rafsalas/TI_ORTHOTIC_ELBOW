@@ -155,8 +155,7 @@ void main(void)
 	int i, j;
 	double sum;
 	MAP_WDT_A_holdTimer();
-    MAP_GPIO_setAsOutputPin(GPIO_PORT_P5, GPIO_PIN2);//nsleep
-    GPIO_setOutputLowOnPin(GPIO_PORT_P5, GPIO_PIN2);
+
 	// INITIALIZATION
 
 		// SPI SETUP (ADS1299)
@@ -174,7 +173,7 @@ void main(void)
 		// MOTOR SETUP (High Torque DC Motors)
 			PWM1=100; // Initialize Motor Speed to 10%
 			PWM2=100; // Initialize Motor Speed to 10%
-			Direction_flag=1; // Initialize Motors to Open Direction
+			Direction_flag=-1; // Initialize Motors to Open Direction
 			setup_Motor_Driver();
 
 
@@ -197,7 +196,7 @@ void main(void)
 			lower_clk_rate();
 			calibration();
 
-			__delay_cycles(5000000);
+		__delay_cycles(5000000);
 
 
 	// DEMO ROUTINE (WITH EMG ONLY)
@@ -232,33 +231,44 @@ void main(void)
 
 	// DEMO ROUTINE (WITHOUT EMG)
 	// OSCILLATE BETWEEN DYNAMIC ANGLE LIMITS
+
 	while(1)
 	{
+
 		__delay_cycles(100000);
 
 		// READ DYNAMIC ANGLE LIMITS AND CENTER ORTHOSIS
-		if(Cal_Request==1)	calibration();
-
+		if(Cal_Request==1){
+			calibration();
+		}
 		// READ ANGLE FROM POTENTIOMETERS
 		read_adc(resultsBuffer);
 		ANGLE_deg[0] = resultsBuffer[0];
+		d = ANGLE_deg[0];
 
 		// EMERGENCY STOP WITH FSRs
+		/*
 		if((resultsBuffer[2] < FSR1_ADC_Threshold)) // PIN5.3 (FSR)
 		{
 			drive_stop();
 			while(1);
 		}
+		*/
 
 		// DAMPEN MOTOR SPEED BASED ON ANGLE
 		Angle_Dampen();
 
 		// FLIP DIRECTION AT LIMITS
-		if(ANGLE_damp<0.1) Direction_flag=Direction_flag*(-1);
+		if(ANGLE_damp<0.2){
+			Direction_flag=Direction_flag*(-1);
+		}
+
 
 		// DRIVE MOTOR
-		PWM1=0.1*PWM_max*ANGLE_damp;
-		PWM2=0.1*PWM_max*ANGLE_damp;
+		PWM1=0.4*PWM_max*ANGLE_damp;
+		PWM2=0.4*PWM_max*ANGLE_damp;
+		b = PWM1;
+		c = PWM2;
 		drive_motor();
 
 	}
