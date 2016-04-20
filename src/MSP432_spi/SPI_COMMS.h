@@ -37,7 +37,7 @@ extern uint8_t SPI_Connected; //Flag for SPI Initialize Complete
 extern double Upper_Arm_Intention;//used for motor
 extern double Lower_Arm_Intention;//used for motor
 extern int8_t Direction_flag;//used for motor
-
+int Direction_flag_i; // Direction Count
 
 // EMG DATA
 extern double EMG[8][100+11-1]; // 8 Channel History (Filtered, Rectified, Averaged)

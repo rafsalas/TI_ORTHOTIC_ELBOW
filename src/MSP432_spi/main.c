@@ -159,16 +159,16 @@ void main(void)
 	// INITIALIZATION
 
 		// SPI SETUP (ADS1299)
-/*
 			raise_clk_rate(); // 48 MHz
 			spi_setup(); // Setup SPI Communication
 			spi_start(); // Setup ADS1299 Registers
 			drdy_setup(); // Setup
 			lower_clk_rate(); // 12 MHz
-*/
+
 
 		// ADC SETUP (Potentiometers and Force Sensitive Resistors)
 			setup_adc();
+
 
 		// MOTOR SETUP (High Torque DC Motors)
 			PWM1=100; // Initialize Motor Speed to 10%
@@ -186,15 +186,17 @@ void main(void)
 		    MAP_Interrupt_enableMaster();
 
 
-
 		// UART (Bluetooth)
 			lower_clk_rate();
 			uart_setup();
+
 
 		// Calibration Routine
 		    while(Cal_Request!=1);
 			lower_clk_rate();
 			calibration();
+
+
 
 			__delay_cycles(5000000);
 
@@ -222,7 +224,7 @@ void main(void)
 		EMG_Condition_Data();
 
 		// COMPARATOR
-		//Comparator();
+		Comparator();
 
 		// LOWER CLOCK RATE (48 MHz -> 12 MHz)
 		//lower_clk_rate();
@@ -231,7 +233,7 @@ void main(void)
 
 	// DEMO ROUTINE (WITHOUT EMG)
 	// OSCILLATE BETWEEN DYNAMIC ANGLE LIMITS
-	while(1)
+	while(0)
 	{
 		__delay_cycles(100000);
 
@@ -312,7 +314,7 @@ void main(void)
 
 	// DEMO ROUTINE (FULL INTEGRATION)
 	// SHOW EMG CONTROLLING MOTOR WITH POTENTIOMETER FEEDBACK
-    while(0){
+    while(1){
 		///////////////////////////////////////////////////////////////////////
 		// Calibration Routine
 		///////////////////////////////////////////////////////////////////////
@@ -411,7 +413,7 @@ void main(void)
 		// OUTPUT:
 		//      --
 		///////////////////////////////////////////////////////////////////////
-			MOTOR[0]=PWM_max*Upper_Arm_Intention*ANGLE_damp;
+			MOTOR[0]=0.3*PWM_max*Upper_Arm_Intention*ANGLE_damp;
 
 			PWM1=MOTOR[0];
 			PWM2=MOTOR[0];
@@ -424,7 +426,7 @@ void main(void)
 			// ANGLE History Buffer
 			for(i=ANGLE_History-1;i>0;i--) ANGLE_deg[i]=ANGLE_deg[i-1];
 			// MOTOR History Buffer
-			for(i=MOTOR_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
+			for(i=MOTOR_History-1;j>0;j--) MOTOR[i][j]=MOTOR[i][j-1];
     }
 
 

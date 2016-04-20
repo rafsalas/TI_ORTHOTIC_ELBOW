@@ -56,6 +56,7 @@ void calibration(){
 	ANGLE_min = temp[0]; // Read Minimum Angle
 	ANGLE_max = temp[1]; // Read Maximum Angle
 	Read_flag = 0; // Reset Read Flag
+
 	uint32_t i;
 	int j;
 	int k;
@@ -79,7 +80,7 @@ void calibration(){
 	//////
 	// EMG
 	//////
-/*
+
 	raise_clk_rate();
 
 	// Reset Minimum EMG Signal
@@ -95,10 +96,10 @@ void calibration(){
 
 	for(i = 0; i < NUM_ACTIVE_CHANNELS; i++) EMG_max[i] = EMG_max[i]/(EMG_History*Calibration_History); // Average EMG Data
 	lower_clk_rate();
-*/
 
 
-	reset_position();
+
+	//reset_position();
 
 
 	left_loop = left_loop+1;

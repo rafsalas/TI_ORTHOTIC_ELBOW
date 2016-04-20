@@ -54,6 +54,10 @@ const double ADC_Amplifier = 1; // Amplification Coefficient
 double EMG_Convolution[100+11-1]; // Convolution Result
 double EMG_Process[8][100+11-1];
 double EMG_Process_2[8][100+11-1];
+double EMG_avg[8];
+
+double EMG_COMP_max[8];
+double EMG_COMP_min[8];
 
 
 // DSP PARAMETERS
@@ -213,6 +217,7 @@ void spi_write_registers(){
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x40); // Write Starting at ID Address
 	__delay_cycles(1000);
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x0C); // Write 13 Registers
+	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x0E); // Write 15 Registers
 	__delay_cycles(1000);
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x3E); // ID Register
 	__delay_cycles(1000);
@@ -232,6 +237,7 @@ void spi_write_registers(){
 
 	// CONFIG 3 Register
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x60); // CONFIG3 Register
+	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x6C); // CONFIG3 Register
 	__delay_cycles(1000);
 
 	// LOFF Register
@@ -248,7 +254,7 @@ void spi_write_registers(){
 	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x80); // Channel OFF
 
 
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x30); // CH1SET Register
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x20); // CH1SET Register
 	__delay_cycles(1000);
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x30); // CH2SET Register
 	__delay_cycles(1000);
@@ -265,6 +271,13 @@ void spi_write_registers(){
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x80); // CH8SET Register (Off)
 	__delay_cycles(1000);
 
+	// BIAS_SENSP Register
+	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x03); // BIAS_SENSP Register (Channels 1 and 2)
+	//__delay_cycles(1000);
+
+	// BIAS_SENSN Register
+	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x03); // BIAS_SENSN Register (Channels 1 and 2)
+	//__delay_cycles(1000);
 }
 
 void spi_read_registers(){
@@ -690,14 +703,29 @@ void Convolution(void)
 void Comparator(){
 	int i, j;
 	double sum;
-	double EMG_avg[8];
+	double EMG_avg_full;
+	int average_history = 30;
 
 	for(i=0;i<NUM_ACTIVE_CHANNELS;i++)
 	{
 		// EMG Moving Average
 		sum=0;
+
 		for(j=0;j<EMG_History;j++) sum=sum+EMG[i][j];
-		EMG_avg[i]=sum/EMG_History;
+		EMG_avg_full = sum/EMG_History;
+
+		sum=0;
+		for(j=0;j<average_history;j++) sum=sum+EMG[i][j];
+		EMG_avg[i]=sum/average_history-EMG_avg_full;
+
+
+		// Calibrate Static EMG Maximum
+		//if((EMG_avg[i]>EMG_COMP_max[i] || EMG_COMP_max[i]==0)) EMG_COMP_max[i]=EMG_avg[i];
+
+		//if(EMG_avg[i]<EMG_COMP_min[i] || EMG_COMP_min[i]==0) EMG_COMP_min[i]=EMG_avg[i];
+
+		//EMG_avg[i]=(EMG_avg[i]-EMG_COMP_min[i])/(EMG_COMP_max[i]-EMG_COMP_min[i]);
+
 
 		// Linear Calibration
 		//if(i==BICEPS) EMG_avg[i]=2*EMG_avg[i]-0.1;
@@ -709,24 +737,62 @@ void Comparator(){
 
 
 
-/*
+	/*
 	// Compare Normalized Biceps and Triceps EMG Signals
 	if(EMG_avg[BICEPS] > EMG_avg[TRICEPS]) // More Active Biceps Signal -> Use Biceps Signal, Decrease Angle
 	{
 		Upper_Arm_Intention = EMG_avg[BICEPS];
-		Direction_flag = -1;
+
+		if(Direction_flag_i>10)
+		{
+			Direction_flag = -1;
+			Direction_flag_i = 0;
+		}
+		else Direction_flag_i=Direction_flag_i+1;
 	}
 	else if(EMG_avg[BICEPS] < EMG_avg[TRICEPS]) // More Active Triceps Signal -> Use Triceps Signal, Increase Angle
 	{
 		Upper_Arm_Intention = EMG_avg[TRICEPS];
-		Direction_flag = 1;
+
+		if(Direction_flag_i>10)
+		{
+			Direction_flag = 1;
+			Direction_flag_i = 0;
+		}
+		else Direction_flag_i=Direction_flag_i+1;
 	}
 	else // Equal Intensity Signals
 	{
 		Upper_Arm_Intention = 0;
 		Direction_flag = 0;
 	}
-*/
+	*/
+
+	// Test Graphs
+	/*
+	EMG_avg[BICEPS]=-(EMG_avg[BICEPS]-EMG_avg[TRICEPS]);
+
+
+	if(_Q1abs(EMG_avg[BICEPS])>0.3)	EMG_avg[TRICEPS]=EMG_avg[BICEPS];
+	else EMG_avg[TRICEPS]=0;
+	*/
+
+	EMG_avg[BICEPS]=-(EMG_avg[TRICEPS]-EMG_avg[BICEPS]);
+
+
+	// Differential Intention
+	Upper_Arm_Intention=_Q1abs(EMG_avg[TRICEPS]-EMG_avg[BICEPS]);
+
+	// Threshold
+	if(Upper_Arm_Intention<0.3) Upper_Arm_Intention=0;
+
+	// Direction
+	if(EMG_avg[TRICEPS]>EMG_avg[BICEPS]) Direction_flag=1;
+	else Direction_flag=-1;
+
+
+
+
 
 
 }
