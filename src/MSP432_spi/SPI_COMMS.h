@@ -67,8 +67,10 @@ int32_t twos_to_signed (uint32_t msb, uint32_t mid, uint32_t lsb);
 // CONVOLUTION COMPUTATION
 void Convolution(void);
 
+
 //Compare between the two tricep and bicep
 void Comparator(void);
+
 
 
 #endif /* SPI_COMMS_H_ */

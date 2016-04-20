@@ -177,6 +177,7 @@ void main(void)
 			setup_Motor_Driver();
 
 
+
 		// PUSH BUTTON SETUP (Direction Change)
 		    MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);//push buttons pin1 push = toggle direction flag
 		    MAP_GPIO_clearInterruptFlag(GPIO_PORT_P1, GPIO_PIN1|GPIO_PIN4);//pin 4 push does nothing
@@ -184,6 +185,7 @@ void main(void)
 		    MAP_Interrupt_enableInterrupt(INT_PORT1);
 		    // Enabling MASTER interrupts
 		    MAP_Interrupt_enableMaster();
+
 
 
 		// UART (Bluetooth)
@@ -266,8 +268,6 @@ void main(void)
 		// DRIVE MOTOR
 		PWM1=0.4*PWM_max*ANGLE_damp;
 		PWM2=0.4*PWM_max*ANGLE_damp;
-		b = PWM1;
-		c = PWM2;
 		drive_motor();
 
 	}
@@ -297,7 +297,6 @@ void main(void)
 
 		read_adc(resultsBuffer);
 		ANGLE_deg[0] = resultsBuffer[0];//0.5*(resultsBuffer[0]+resultsBuffer[1]); // PIN5.5 + PIN5.4 (Potentiometers)
-
 
 		// ANGLE DAMPEN COEFFICIENT
 		Angle_Dampen();
@@ -430,10 +429,9 @@ void main(void)
 			// ANGLE History Buffer
 			for(i=ANGLE_History-1;i>0;i--) ANGLE_deg[i]=ANGLE_deg[i-1];
 			// MOTOR History Buffer
-			for(i=MOTOR_History-1;j>0;j--) MOTOR[i][j]=MOTOR[i][j-1];
+			for(i=MOTOR_History-1;i>0;i--) MOTOR[i]=MOTOR[i-1];
+
     }
-
-
 }
 //-----------------------------------------------Interrupts
 

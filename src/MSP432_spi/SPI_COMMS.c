@@ -699,6 +699,7 @@ void Convolution(void)
 }
 
 
+
 void Comparator(){
 	int i, j;
 	double sum;
