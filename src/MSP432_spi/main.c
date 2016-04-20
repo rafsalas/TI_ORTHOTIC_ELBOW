@@ -196,9 +196,7 @@ void main(void)
 			lower_clk_rate();
 			calibration();
 
-
-
-			__delay_cycles(5000000);
+		__delay_cycles(5000000);
 
 
 	// DEMO ROUTINE (WITH EMG ONLY)
@@ -235,31 +233,41 @@ void main(void)
 	// OSCILLATE BETWEEN DYNAMIC ANGLE LIMITS
 	while(0)
 	{
+
 		__delay_cycles(100000);
 
 		// READ DYNAMIC ANGLE LIMITS AND CENTER ORTHOSIS
-		if(Cal_Request==1)	calibration();
-
+		if(Cal_Request==1){
+			calibration();
+		}
 		// READ ANGLE FROM POTENTIOMETERS
 		read_adc(resultsBuffer);
 		ANGLE_deg[0] = resultsBuffer[0];
+		d = ANGLE_deg[0];
 
 		// EMERGENCY STOP WITH FSRs
+		/*
 		if((resultsBuffer[2] < FSR1_ADC_Threshold)) // PIN5.3 (FSR)
 		{
 			drive_stop();
 			while(1);
 		}
+		*/
 
 		// DAMPEN MOTOR SPEED BASED ON ANGLE
 		Angle_Dampen();
 
 		// FLIP DIRECTION AT LIMITS
-		if(ANGLE_damp<0.1) Direction_flag=Direction_flag*(-1);
+		if(ANGLE_damp<0.2){
+			Direction_flag=Direction_flag*(-1);
+		}
+
 
 		// DRIVE MOTOR
-		PWM1=0.1*PWM_max*ANGLE_damp;
-		PWM2=0.1*PWM_max*ANGLE_damp;
+		PWM1=0.4*PWM_max*ANGLE_damp;
+		PWM2=0.4*PWM_max*ANGLE_damp;
+		b = PWM1;
+		c = PWM2;
 		drive_motor();
 
 	}
@@ -286,11 +294,6 @@ void main(void)
 
 		// Comparator Test
 		//Comparator();
-
-
-
-
-
 
 		read_adc(resultsBuffer);
 		ANGLE_deg[0] = resultsBuffer[0];//0.5*(resultsBuffer[0]+resultsBuffer[1]); // PIN5.5 + PIN5.4 (Potentiometers)
@@ -336,9 +339,10 @@ void main(void)
 		///////////////////////////////////////////////////////////////////////
 		    raise_clk_rate();
 			MAP_Interrupt_enableInterrupt(INT_TA3_N);
+			MAP_Interrupt_enableInterrupt(INT_EUSCIA2);
 			SPI_Collect_Data();
 			MAP_Interrupt_disableInterrupt(INT_TA3_N);
-
+			MAP_Interrupt_disableInterrupt(INT_EUSCIA2);
 
 		///////////////////////////////////////////////////////////////////////
 		// Condition EMG Data

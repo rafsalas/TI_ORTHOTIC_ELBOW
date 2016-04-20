@@ -26,8 +26,8 @@ void setup_Motor_Driver(){
 	fault = false;
 
     MAP_GPIO_setAsInputPinWithPullUpResistor(GPIO_PORT_P5, GPIO_PIN0);//nfault
-    MAP_GPIO_setAsOutputPin(GPIO_PORT_P5, GPIO_PIN1);//nsleep
-    MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P5, GPIO_PIN1);
+    MAP_GPIO_setAsOutputPin(GPIO_PORT_P4, GPIO_PIN7);//nsleep
+    MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P4, GPIO_PIN7);
 
     setup_PWM();
     MAP_GPIO_clearInterruptFlag(GPIO_PORT_P5, GPIO_PIN0);
@@ -79,7 +79,7 @@ void setup_PWM(){
 }
 
 void drive_forward(){
-	MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P5, GPIO_PIN1);
+	MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P4, GPIO_PIN7);
 	//PWM-A
 	MAP_GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P2, GPIO_PIN5, GPIO_PRIMARY_MODULE_FUNCTION);// AIN2 = PWM
     MAP_GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN4);
@@ -93,7 +93,7 @@ void drive_forward(){
 }
 
 void drive_reverse(){
-	MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P5, GPIO_PIN1);
+	MAP_GPIO_setOutputHighOnPin(GPIO_PORT_P4, GPIO_PIN7);
 	//PWM-A
 	MAP_GPIO_setAsPeripheralModuleFunctionOutputPin(GPIO_PORT_P2, GPIO_PIN4, GPIO_PRIMARY_MODULE_FUNCTION);//PWM-A1 = pwm
 	MAP_GPIO_setAsOutputPin(GPIO_PORT_P2, GPIO_PIN5);//pwmA2 = low
@@ -117,7 +117,7 @@ void drive_motor(){
 }
 
 void drive_stop(){
-	 MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P5, GPIO_PIN1);
+	 MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P4, GPIO_PIN7);
 	 MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P2, GPIO_PIN4|GPIO_PIN5);
 	 MAP_GPIO_setOutputLowOnPin(GPIO_PORT_P7, GPIO_PIN5|GPIO_PIN7);
 }

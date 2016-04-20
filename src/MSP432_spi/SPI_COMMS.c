@@ -6,6 +6,8 @@
 // Authors: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
 
 #include "SPI_COMMS.h"
+#include <eusci.h>
+#include <spi.h>
 
 // ADS1299 REGISTER SETTINGS
 volatile uint16_t ID_reg = 0;
@@ -37,7 +39,6 @@ volatile uint16_t MISC2_reg = 0;
 
 // CALIBRATION DATA
 extern uint8_t Cal_Request;
-
 
 // SPI DATA
 uint8_t SPI_Raw_Data[54]; // 54 Packets * 8 Bits per Packet = 216 Bits
@@ -452,8 +453,6 @@ void drdy_setup(){
     MAP_Interrupt_enableMaster();
 }
 
-#include <eusci.h>
-#include <spi.h>
 
 void SPI_Collect_Data(void)
 {
@@ -736,8 +735,8 @@ void Comparator(){
 
 
 
+/*
 
-	/*
 	// Compare Normalized Biceps and Triceps EMG Signals
 	if(EMG_avg[BICEPS] > EMG_avg[TRICEPS]) // More Active Biceps Signal -> Use Biceps Signal, Decrease Angle
 	{
@@ -766,7 +765,8 @@ void Comparator(){
 		Upper_Arm_Intention = 0;
 		Direction_flag = 0;
 	}
-	*/
+*/
+
 
 	// Test Graphs
 	/*
@@ -789,9 +789,6 @@ void Comparator(){
 	// Direction
 	if(EMG_avg[TRICEPS]>EMG_avg[BICEPS]) Direction_flag=1;
 	else Direction_flag=-1;
-
-
-
 
 
 
