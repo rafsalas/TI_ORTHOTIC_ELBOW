@@ -54,6 +54,9 @@ void reset_position(){
 
 void calibration(){
 
+	drive_stop(); // Stop Motor
+
+
 	while(Read_flag != 1); // Trap Until Bluetooth Buffer Read
 	int *temp = read_cal_angles(); // Read Buffer Contents
 	ANGLE_min = temp[0]; // Read Minimum Angle
@@ -87,7 +90,7 @@ void calibration(){
 
 	left_loop = left_loop+1;
 
-
+/*
 	raise_clk_rate();
 
 	// Reset Minimum EMG Signal
@@ -105,7 +108,7 @@ void calibration(){
 	lower_clk_rate();
 
 	//reset_position();
-
+*/
 
 	left_loop = left_loop+1;
 	Cal_Request = 0;

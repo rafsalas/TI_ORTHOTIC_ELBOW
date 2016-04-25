@@ -159,12 +159,13 @@ void main(void)
 	// INITIALIZATION
 
 		// SPI SETUP (ADS1299)
+	/*
 			raise_clk_rate(); // 48 MHz
 			spi_setup(); // Setup SPI Communication
 			spi_start(); // Setup ADS1299 Registers
 			drdy_setup(); // Setup
 			lower_clk_rate(); // 12 MHz
-
+	*/
 
 		// ADC SETUP (Potentiometers and Force Sensitive Resistors)
 			setup_adc();
@@ -233,7 +234,7 @@ void main(void)
 
 	// DEMO ROUTINE (WITHOUT EMG)
 	// OSCILLATE BETWEEN DYNAMIC ANGLE LIMITS
-	while(0)
+	while(1)
 	{
 
 		__delay_cycles(100000);
@@ -245,16 +246,14 @@ void main(void)
 		// READ ANGLE FROM POTENTIOMETERS
 		read_adc(resultsBuffer);
 		ANGLE_deg[0] = resultsBuffer[0];
-		d = ANGLE_deg[0];
 
 		// EMERGENCY STOP WITH FSRs
-		/*
 		if((resultsBuffer[2] < FSR1_ADC_Threshold)) // PIN5.3 (FSR)
 		{
 			drive_stop();
 			while(1);
 		}
-		*/
+
 
 		// DAMPEN MOTOR SPEED BASED ON ANGLE
 		Angle_Dampen();
@@ -266,8 +265,8 @@ void main(void)
 
 
 		// DRIVE MOTOR
-		PWM1=0.4*PWM_max*ANGLE_damp;
-		PWM2=0.4*PWM_max*ANGLE_damp;
+		PWM1=0.5*PWM_max*ANGLE_damp;
+		PWM2=0.5*PWM_max*ANGLE_damp;
 		drive_motor();
 
 	}
@@ -316,7 +315,7 @@ void main(void)
 
 	// DEMO ROUTINE (FULL INTEGRATION)
 	// SHOW EMG CONTROLLING MOTOR WITH POTENTIOMETER FEEDBACK
-    while(1){
+    while(0){
 		///////////////////////////////////////////////////////////////////////
 		// Calibration Routine
 		///////////////////////////////////////////////////////////////////////
@@ -416,7 +415,7 @@ void main(void)
 		// OUTPUT:
 		//      --
 		///////////////////////////////////////////////////////////////////////
-			MOTOR[0]=0.3*PWM_max*Upper_Arm_Intention*ANGLE_damp;
+			MOTOR[0]=0.5*PWM_max*Upper_Arm_Intention*ANGLE_damp;
 
 			PWM1=MOTOR[0];
 			PWM2=MOTOR[0];

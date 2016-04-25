@@ -257,7 +257,7 @@ void spi_write_registers(){
 
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x20); // CH1SET Register
 	__delay_cycles(1000);
-	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x30); // CH2SET Register
+	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x20); // CH2SET Register
 	__delay_cycles(1000);
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x60); // CH3SET Register
 	__delay_cycles(1000);
