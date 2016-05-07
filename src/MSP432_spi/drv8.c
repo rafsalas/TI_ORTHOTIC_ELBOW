@@ -1,8 +1,12 @@
 /*
  * drv8.c
  *
- *  Created on: Feb 3, 2016
- *      Author: rafael
+ *
+ * 	Elbow Orthosis
+ * 	Texas A&M University & Texas Instruments
+ *
+ *  Created on: Fall 2015
+ *      Author: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
  *
  *      Two PWMs are set up and ran to control dual motors (PWM A and B). Each PWM requires two pins.
  *      When one pin is set to PWM signal the other is set low. Direction of the motor is dependant on

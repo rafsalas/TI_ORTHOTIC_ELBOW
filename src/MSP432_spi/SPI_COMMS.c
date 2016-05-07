@@ -1,10 +1,11 @@
 // SPI_COMMS.c
-
-// Elbow Orthosis
-// Texas A&M University & Texas Instruments
-// Fall 2015 - Spring 2016
-// Authors: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
-
+/*
+ * 	Elbow Orthosis
+ * 	Texas A&M University & Texas Instruments
+ *
+ *  Created on: Fall 2015
+ *      Author: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
+ */
 #include "SPI_COMMS.h"
 #include <eusci.h>
 #include <spi.h>
@@ -73,47 +74,6 @@ double h_HP[11] = { // Filter Coefficients for High Pass Filter
 	     0.1160770995248,  -0.2602154869553,  -0.2455987326682
 };
 
-
-/*
-// FS = 1000;
-const int N_FIR_HP = 51; // Order of High Pass Filter
-double h_HP[51] = { // Filter Coefficients for High Pass Filter
-		  -0.002729193143384,-0.002143828148759,-0.002934685495952,-0.003874173730013,
-		  -0.004967882067795,-0.006219635325177,-0.007626712969714,-0.009184590323256,
-		   -0.01088242437398, -0.01270855175806, -0.01464338133543, -0.01666799609793,
-		   -0.01875533471601, -0.02087750750756, -0.02300292193737, -0.02509828678052,
-		   -0.02713063072087, -0.02906425785573, -0.03086740599704, -0.03250334577835,
-		   -0.03394589775075, -0.03516622926027, -0.03613980319741, -0.03685127291973,
-		   -0.03728217623412,   0.9625729558984, -0.03728217623412, -0.03685127291973,
-		   -0.03613980319741, -0.03516622926027, -0.03394589775075, -0.03250334577835,
-		   -0.03086740599704, -0.02906425785573, -0.02713063072087, -0.02509828678052,
-		   -0.02300292193737, -0.02087750750756, -0.01875533471601, -0.01666799609793,
-		   -0.01464338133543, -0.01270855175806, -0.01088242437398,-0.009184590323256,
-		  -0.007626712969714,-0.006219635325177,-0.004967882067795,-0.003874173730013,
-		  -0.002934685495952,-0.002143828148759,-0.002729193143384
-};
-*/
-
-/*
-// FS = 250;
-const int N_FIR_HP = 51; // Order of High Pass Filter
-double h_HP[51] = { // Filter Coefficients for High Pass Filter
-		   0.000356586715428,-0.0008997339035142,-0.000130582160453,0.0006379418003511,
-		   0.001180463959195,0.0008140534177153,-0.0007247246414742,-0.002623695107915,
-		  -0.003182450629192,-0.001000488338776, 0.003520844066769, 0.007600681652724,
-		   0.007373550849508,0.0007109445803465, -0.01015976125381, -0.01846545097021,
-		   -0.01623898498151,4.837221893699e-05,  0.02488565002061,   0.0437188578287,
-		    0.03887300088139,-0.0008811863844577, -0.07223115256907,  -0.1557879885789,
-		    -0.2230169694092,   0.7512444416715,  -0.2230169694092,  -0.1557879885789,
-		   -0.07223115256907,-0.0008811863844577,  0.03887300088139,   0.0437188578287,
-		    0.02488565002061,4.837221893699e-05, -0.01623898498151, -0.01846545097021,
-		   -0.01015976125381,0.0007109445803465, 0.007373550849508, 0.007600681652724,
-		   0.003520844066769,-0.001000488338776,-0.003182450629192,-0.002623695107915,
-		  -0.0007247246414742,0.0008140534177153, 0.001180463959195,0.0006379418003511,
-		  -0.000130582160453,-0.0008997339035142, 0.000356586715428
-};
-*/
-
 //-------------------------------------------------------
 void spi_setup(){
 /* SPI Master Configuration Parameter */
@@ -161,11 +121,8 @@ void spi_setup(){
 int32_t twos_to_signed (uint32_t msb, uint32_t mid, uint32_t lsb){
 
 	// Cast Inputs as 8 Bit Unsigned Integer
-	//msb = msb & 0xFF; mid = mid & 0xFF; lsb = lsb & 0xFF;
 
 	uint32_t num = (msb<<16)|(mid<<8)|(lsb); 	// Concatenate Bytes
-
-	//num = num&(0xFFFFFF); // Cast Number as 24 Bit Integer
 
 	if((num>>23)%2==1) return-((1<<24)-num); // If 24th Bit is a 1, then use 2's Complement
 	else return num; // Otherwise, no need for 2's complement
@@ -187,21 +144,6 @@ void spi_start(int32_t sample[50]){
 	// READ REGISTERS
 	spi_read_registers();
 
-	//spi_register_setting();
-
-	// START COMMAND
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x08); //START
-	//__delay_cycles(5000);
-
-	// READ DATA CONTINUOUSLY
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x10); // RDATAC
-	//__delay_cycles(5000);
-
-	// READ DATA BY COMMAND
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x12); // RDATAC
-	//__delay_cycles(5000);
-
-
 	// COMPLETE FLAG
 	SPI_Connected=0x01; //Flag for SPI Initialize Complete
 }
@@ -209,7 +151,6 @@ void spi_start(int32_t sample[50]){
 
 void spi_write_registers(){
 	// Write ADS1299 Firmware Registers
-
 	// Stop Continuous Data Flow for Register Setting
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x11); //SDATAC
 	__delay_cycles(100);
@@ -224,9 +165,6 @@ void spi_write_registers(){
 	__delay_cycles(1000);
 
 	// CONFIG 1 Register (Sample Frequency)
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x96); // CONFIG1 Register (DR 250 Hz)
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x95); // CONFIG1 Register (DR 500 Hz)
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x94); // CONFIG1 Register (DR 1000 Hz)
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x93); // CONFIG1 Register (DR 2000 Hz)
 	__delay_cycles(1000);
 
@@ -246,14 +184,6 @@ void spi_write_registers(){
 	__delay_cycles(1000);
 
 	// Channel Registers
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x01); // Input Shorted
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x02); // Bias Measurement
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x03); // Supply Measurement
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x04); // Temperature Sensor
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x05); // Test Signal
-
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x80); // Channel OFF
-
 
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x20); // CH1SET Register
 	__delay_cycles(1000);
@@ -272,13 +202,6 @@ void spi_write_registers(){
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x80); // CH8SET Register (Off)
 	__delay_cycles(1000);
 
-	// BIAS_SENSP Register
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x03); // BIAS_SENSP Register (Channels 1 and 2)
-	//__delay_cycles(1000);
-
-	// BIAS_SENSN Register
-	//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x03); // BIAS_SENSN Register (Channels 1 and 2)
-	//__delay_cycles(1000);
 }
 
 void spi_read_registers(){
@@ -288,13 +211,11 @@ void spi_read_registers(){
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x11); //SDATAC
 	__delay_cycles(1000);
 
-
 	// Read Address Command
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x20); // Read Starting at ID Address
 	__delay_cycles(1000);
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x17); // Read 24 Registers
 	__delay_cycles(1000);
-
 
 	//1 ID Register
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x00); // Dummy Signal
@@ -457,7 +378,6 @@ void drdy_setup(){
 void SPI_Collect_Data(void)
 {
 	int win_i,i;
-
 	uint32_t lsb;
 	uint32_t mid;
 	uint32_t msb;
@@ -469,14 +389,9 @@ void SPI_Collect_Data(void)
 	int32_t container_2;
 	uint8_t buffer_unempty;
 
-	//
 	MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x08); //START
-	//
-
 	if(SPI_Connected)
 	{
-
-		//MAP_SPI_transmitData(EUSCI_B0_MODULE, 0x08); //START
 		__delay_cycles(100);
 
 		for(win_i=0;win_i<N_WIN;win_i++)
@@ -486,7 +401,6 @@ void SPI_Collect_Data(void)
 			Drdy = GPIO_getInputPinValue(GPIO_PORT_P3,GPIO_PIN5);
 			while(Drdy!=0)
 			{
-
 				if(buffer_unempty)
 				{
 					__delay_cycles(80); // SPI Delay
@@ -494,10 +408,7 @@ void SPI_Collect_Data(void)
 					__delay_cycles(80); // SPI Delay
 					buffer_unempty = EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r;
 				}
-
-
 				Drdy = GPIO_getInputPinValue(GPIO_PORT_P3,GPIO_PIN5); // Check DRDY Pin
-
 			}
 
 			msb=0;
@@ -508,9 +419,7 @@ void SPI_Collect_Data(void)
 				EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x12; // RDATAC
 				__delay_cycles(80); // SPI Delay
 
-
 				// Routine Must Issue 24 + CHANNELS*24 SCLK Signals (216 Clock Signals)
-
 				// VERIFY DATA WITH STATUS HEADER
 				EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
 				__delay_cycles(80); // SPI Delay
@@ -535,14 +444,12 @@ void SPI_Collect_Data(void)
 
 				// PROMPT DATA STREAM
 				for(i=0;i<NUM_ACTIVE_CHANNELS;i++)
-				//for(i=0;i<NUM_CHANNELS;i++)
 				{
 
 					EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
 					__delay_cycles(80); // SPI Delay
 					msb = EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r;
 					__delay_cycles(80); // SPI Delay
-
 
 					EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x00;
 					__delay_cycles(80); // SPI Delay
@@ -554,20 +461,13 @@ void SPI_Collect_Data(void)
 					lsb = EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rRXBUF.r;
 					__delay_cycles(80); // SPI Delay
 
-
 					// Concatenate
 					container_1=(msb<<16)|(mid<<8)|(lsb);
 
 					// 2's Complement
 					if((container_1>>23)%2==1) container_2=-((1<<24)-container_1);
 					else container_2=container_1;
-
-
-
 					SPI_Data_Window[i][win_i]=container_2;
-
-					// Set Green LED if Max Out ADC
-					//if(SPI_Data_Window[i][win_i]==8388607 || SPI_Data_Window[i][win_i]==-8388608) GPIO_setOutputHighOnPin(GPIO_PORT_P2, GPIO_PIN1);
 
 				}
 
@@ -586,15 +486,11 @@ void SPI_Collect_Data(void)
 			}
 
 			__delay_cycles(100); // SPI Delay
-
-
 		}
 	    // STOP SPI CHANNEL
-		//
 		EUSCI_B_CMSIS(EUSCI_B0_MODULE)->rTXBUF.r = 0x0A; // STOP DATA Conversion
 		//
 		__delay_cycles(10000); // SPI Delay
-		//__delay_cycles(1000000); // SPI Delay
 	}
 }
 
@@ -611,7 +507,6 @@ void EMG_Condition_Data(void)
 		{
 			EMG_Voltage_Window[j]=SPI_Data_Window[i][j]*(Reference_Voltage/(ADC_Amplifier*ADS1299_Resolution));
 
-			//EMG[i][j]=EMG_Voltage_Window[j];
 		}
 
 		// Convolution
@@ -620,13 +515,7 @@ void EMG_Condition_Data(void)
 		// Determine DC Offset with Average of High Pass Filter
 		sum = 0;
 		for(j=N_FIR_HP;j<N_WIN-1;j++)
-		//for(j=0;j<N_WIN+N_FIR_HP-1;j++)
 		{
-			//if(j>=N_FIR_HP || j<N_WIN-1) EMG[i][j]=EMG_Convolution[i];
-			//else EMG[i][j]=0;
-
-
-			// EMG[i][j]=EMG_Convolution[j];
 			EMG_Process[i][j]=EMG_Convolution[j];
 
 			sum = sum + EMG_Convolution[j]; // Sum Middle of Convolution
@@ -649,16 +538,10 @@ void EMG_Condition_Data(void)
 		if( (Cal_Request==1) && (average>EMG_max[i] || EMG_max[i]==0) && (EMG_i>10) ) EMG_max[i]=average;
 
 		// Dynamic EMG Minimum
-		// Reassess Every 50 Windows
-		//if((EMG_i%50)==0)
-		//if(average<1.2*EMG_min[i]) EMG_min[i] = EMG_min[i]*1.1;
-
 		if(average<EMG_min[i] || EMG_min[i]==0) EMG_min[i]=average;
 
 		// EMG History Buffer
 		for(j=EMG_History-1;j>0;j--) EMG[i][j]=EMG[i][j-1];
-
-
 
 		// Normalize
 		EMG[i][0]=(average-EMG_min[i])/(EMG_max[i]-EMG_min[i]);
@@ -698,8 +581,6 @@ void Convolution(void)
 	}
 }
 
-
-
 void Comparator(){
 	int i, j;
 	double sum;
@@ -718,68 +599,9 @@ void Comparator(){
 		for(j=0;j<average_history;j++) sum=sum+EMG[i][j];
 		EMG_avg[i]=sum/average_history-EMG_avg_full;
 
-
-		// Calibrate Static EMG Maximum
-		//if((EMG_avg[i]>EMG_COMP_max[i] || EMG_COMP_max[i]==0)) EMG_COMP_max[i]=EMG_avg[i];
-
-		//if(EMG_avg[i]<EMG_COMP_min[i] || EMG_COMP_min[i]==0) EMG_COMP_min[i]=EMG_avg[i];
-
-		//EMG_avg[i]=(EMG_avg[i]-EMG_COMP_min[i])/(EMG_COMP_max[i]-EMG_COMP_min[i]);
-
-
-		// Linear Calibration
-		//if(i==BICEPS) EMG_avg[i]=2*EMG_avg[i]-0.1;
-		//if(i==TRICEPS) EMG_avg[i]=2*EMG_avg[i]-0.1;
-
 	}
-
-
-
-
-/*
-
-	// Compare Normalized Biceps and Triceps EMG Signals
-	if(EMG_avg[BICEPS] > EMG_avg[TRICEPS]) // More Active Biceps Signal -> Use Biceps Signal, Decrease Angle
-	{
-		Upper_Arm_Intention = EMG_avg[BICEPS];
-
-		if(Direction_flag_i>10)
-		{
-			Direction_flag = -1;
-			Direction_flag_i = 0;
-		}
-		else Direction_flag_i=Direction_flag_i+1;
-	}
-	else if(EMG_avg[BICEPS] < EMG_avg[TRICEPS]) // More Active Triceps Signal -> Use Triceps Signal, Increase Angle
-	{
-		Upper_Arm_Intention = EMG_avg[TRICEPS];
-
-		if(Direction_flag_i>10)
-		{
-			Direction_flag = 1;
-			Direction_flag_i = 0;
-		}
-		else Direction_flag_i=Direction_flag_i+1;
-	}
-	else // Equal Intensity Signals
-	{
-		Upper_Arm_Intention = 0;
-		Direction_flag = 0;
-	}
-*/
-
-
-	// Test Graphs
-	/*
-	EMG_avg[BICEPS]=-(EMG_avg[BICEPS]-EMG_avg[TRICEPS]);
-
-
-	if(_Q1abs(EMG_avg[BICEPS])>0.3)	EMG_avg[TRICEPS]=EMG_avg[BICEPS];
-	else EMG_avg[TRICEPS]=0;
-	*/
 
 	EMG_avg[BICEPS]=-(EMG_avg[TRICEPS]-EMG_avg[BICEPS]);
-
 
 	// Differential Intention
 	Upper_Arm_Intention=_Q1abs(EMG_avg[TRICEPS]-EMG_avg[BICEPS]);
@@ -790,8 +612,6 @@ void Comparator(){
 	// Direction
 	if(EMG_avg[TRICEPS]>EMG_avg[BICEPS]) Direction_flag=1;
 	else Direction_flag=-1;
-
-
 
 }
 

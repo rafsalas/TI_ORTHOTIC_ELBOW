@@ -16,7 +16,6 @@
 #define RADIALENCODER_H_
 
 #include <driverlib.h>
-#include "printf.h"
 
 extern double ANGLE_deg[50]; // 50 Samples of Angle History
 extern double ANGLE_max; // Maximum Permitted Angle from Calibration Routine

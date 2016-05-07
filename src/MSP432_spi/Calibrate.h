@@ -1,8 +1,11 @@
 /*
  * Calibrate.h
  *
- *  Created on: Apr 3, 2016
- *      Author: rafael
+ * 	Elbow Orthosis
+ * 	Texas A&M University & Texas Instruments
+ *
+ *  Created on: Fall 2015
+ *      Author: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
  */
 
 #ifndef CALIBRATE_H_

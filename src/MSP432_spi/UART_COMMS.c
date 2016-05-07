@@ -1,8 +1,11 @@
 /*
  * UART_COMMS.c
  *
- *  Created on: Feb 20, 2016
- *      Author: rafael
+ * 	Elbow Orthosis
+ * 	Texas A&M University & Texas Instruments
+ *
+ *  Created on: Fall 2015
+ *      Author: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
  *      Uart setup with a baud rate of 9600 with smclk running at 3MHz. LED indicators tell transmission status. Uart pins are connected to blue tooth
  *
  *      Pin map:
@@ -81,7 +84,6 @@ int *read_cal_angles(){
 	h = angles[1];
 	return angles;
 }
-
 
 void euscia2_isr(void)
 {

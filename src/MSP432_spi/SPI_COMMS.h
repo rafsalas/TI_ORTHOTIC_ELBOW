@@ -1,10 +1,11 @@
 // SPI_COMMS.h
 
-// Elbow Orthosis
-// Texas A&M University & Texas Instruments
-// Fall 2015 - Spring 2016
-// Authors: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
-
+/* 	Elbow Orthosis
+ * 	Texas A&M University & Texas Instruments
+ *
+ *  Created on: Fall 2015
+ *      Author: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevasevas
+*/
 #ifndef SPI_COMMS_H_
 #define SPI_COMMS_H_
 
@@ -12,7 +13,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <QMathLib.h>
-#include "printf.h"
 
 // USER VARIABLES
 #define NUM_CHANNELS 8 // Number of Signal Channels

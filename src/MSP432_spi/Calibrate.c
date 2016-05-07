@@ -1,8 +1,12 @@
 /*
  * Calibrate.c
+ * ADC_Sensor.c
  *
- *  Created on: Apr 3, 2016
- *      Author: rafael
+ * 	Elbow Orthosis
+ * 	Texas A&M University & Texas Instruments
+ *
+ *  Created on: Fall 2015
+ *      Author: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
  */
 
 #ifndef CALIBRATE_C_
@@ -90,7 +94,7 @@ void calibration(){
 
 	left_loop = left_loop+1;
 
-/*
+
 	raise_clk_rate();
 
 	// Reset Minimum EMG Signal
@@ -106,9 +110,6 @@ void calibration(){
 
 	for(i = 0; i < NUM_ACTIVE_CHANNELS; i++) EMG_max[i] = EMG_max[i]/(EMG_History*Calibration_History); // Average EMG Data
 	lower_clk_rate();
-
-	//reset_position();
-*/
 
 	left_loop = left_loop+1;
 	Cal_Request = 0;

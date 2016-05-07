@@ -1,4 +1,12 @@
-
+/*
+ * ADC_Sensor.c
+ *
+ * 	Elbow Orthosis
+ * 	Texas A&M University & Texas Instruments
+ *
+ *  Created on: Fall 2015
+ *      Author: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
+ */
 //******************************************************************************
 #include "msp.h"
 #include <driverlib.h>
