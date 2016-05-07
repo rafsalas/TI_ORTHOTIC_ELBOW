@@ -1,4 +1,12 @@
 package com.n8k9.ti_elbow.ti_elbow;
+/*
+ *  MainActivity.java
+ * 	Elbow Orthosis
+ * 	Texas A&M University & Texas Instruments
+ *
+ *  Created on: Fall 2015
+ *      Author: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
+*/
 
 import android.app.Activity;
 import android.content.Context;
@@ -19,20 +27,6 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         addListenerOnButton();
-
-
-//        // Setup the new range seek bar
-//        RangeSeekBar<Integer> rangeSeekBar = new RangeSeekBar<Integer>(this);
-//        // Set the range
-//        rangeSeekBar.setRangeValues(0, 180);
-//        rangeSeekBar.setSelectedMinValue(60);
-//        rangeSeekBar.setSelectedMaxValue(120);
-//
-//        // Add to layout
-//        LinearLayout layout = (LinearLayout) findViewById(R.id.seekbar_placeholder);
-//        layout.addView(rangeSeekBar);
-//        //layout.setBackgroundColor(Color.BLACK);
-
     }
 
     public void addListenerOnButton() {
@@ -47,7 +41,6 @@ public class MainActivity extends Activity {
             @Override
             public void onClick(View arg0) {
                 Intent intent = new Intent(context, BluetoothActivity.class);
-                //Intent intent = new Intent(context, CalibrationActivity.class);
                 startActivity(intent);
             }
 

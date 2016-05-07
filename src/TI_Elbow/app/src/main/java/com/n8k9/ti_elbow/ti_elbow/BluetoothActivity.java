@@ -1,5 +1,12 @@
 package com.n8k9.ti_elbow.ti_elbow;
-
+/*
+ *  BluetoothActivity.java
+ * 	Elbow Orthosis
+ * 	Texas A&M University & Texas Instruments
+ *
+ *  Created on: Fall 2015
+ *      Author: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
+*/
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -19,12 +26,6 @@ import java.util.ArrayList;
 import java.util.Set;
 
 public class BluetoothActivity extends Activity {
-
-//    @Override
-//    public void onCreate(Bundle savedInstanceState) {
-//        super.onCreate(savedInstanceState);
-//        setContentView(R.layout.bluetooth_activity);
-//    }
 
     Button btnPaired;
     ListView devicelist;
@@ -68,7 +69,6 @@ public class BluetoothActivity extends Activity {
                 pairedDevicesList();
             }
         });
-
     }
 
     private void pairedDevicesList()

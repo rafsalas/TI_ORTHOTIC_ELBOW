@@ -1,5 +1,14 @@
 package com.n8k9.ti_elbow.ti_elbow;
 
+/*
+ *  CalibrationActivity.java
+ * 	Elbow Orthosis
+ * 	Texas A&M University & Texas Instruments
+ *
+ *  Created on: Fall 2015
+ *      Author: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
+*/
+
 import android.app.Activity;
 import android.app.ProgressDialog;
 import android.bluetooth.BluetoothAdapter;
@@ -69,7 +78,6 @@ public class CalibrationActivity extends Activity {
 
 
         // Setup RangeSeekBar
-        //RangeSeekBar<Integer> rangeSeekBar = new RangeSeekBar<Integer>(this);
         rangeSeekBar = new RangeSeekBar<Integer>(this);
         // Set the range
         rangeSeekBar.setRangeValues(0, 180);
@@ -79,10 +87,6 @@ public class CalibrationActivity extends Activity {
         // Add to Layout
         LinearLayout layout = (LinearLayout) findViewById(R.id.seekbar2);
         layout.addView(rangeSeekBar);
-        //layout.setBackgroundColor(Color.BLACK);
-
-
-
 
         // Call Widgets
         btnUp_LowerLimit = (Button)findViewById(R.id.button_up_LowerLimit);
@@ -280,19 +284,10 @@ public class CalibrationActivity extends Activity {
                     }
 
                     public void onFinish() {
-
-//                        long buzz_pattern[] = new long[4];
-//                        Arrays.fill(buzz_pattern, 1000);
-//                        v.vibrate(buzz_pattern,-1);
-
                         txt_Timer.setText("Calibration Complete");
                     }
 
-                    //txt_Timer.setText("done!");
-
                 }.start();
-
-                //txt_Timer.setText("done!");
             }
         }.start();
     }
