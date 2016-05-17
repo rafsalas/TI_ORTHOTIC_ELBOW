@@ -21,8 +21,8 @@
  *      CLK = SMCLK
  */
 
-#ifndef DRV8_H_
-#define DRV8_H_
+#ifndef MSP432_SOURCE_DRV8_H_
+#define MSP432_SOURCE_DRV8_H_
 #include <driverlib.h>
 
 
@@ -51,4 +51,4 @@ void drive_reverse();
 void drive_motor();
 void drive_stop();
 
-#endif /* DRV8_H_ */
+#endif /* MSP432_SOURCE_DRV8_H_ */

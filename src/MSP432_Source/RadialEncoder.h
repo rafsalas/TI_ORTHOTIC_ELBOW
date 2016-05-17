@@ -12,8 +12,8 @@
 
 
 
-#ifndef RADIALENCODER_H_
-#define RADIALENCODER_H_
+#ifndef MSP432_SOURCE_RADIALENCODER_H_
+#define MSP432_SOURCE_RADIALENCODER_H_
 
 #include <driverlib.h>
 
@@ -30,4 +30,4 @@ extern int32_t neg_pulse_count;
 void Angle_Dampen();
 
 
-#endif /* RADIALENCODER_H_ */
+#endif /* MSP432_SOURCE_RADIALENCODER_H_ */

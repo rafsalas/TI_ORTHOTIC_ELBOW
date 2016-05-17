@@ -6,8 +6,8 @@
  *  Created on: Fall 2015
  *      Author: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevasevas
 */
-#ifndef SPI_COMMS_H_
-#define SPI_COMMS_H_
+#ifndef MSP432_SOURCE_SPI_COMMS_H_
+#define MSP432_SOURCE_SPI_COMMS_H_
 
 #include <driverlib.h>
 #include <stdint.h>
@@ -73,4 +73,4 @@ void Comparator(void);
 
 
 
-#endif /* SPI_COMMS_H_ */
+#endif /* MSP432_SOURCE_SPI_COMMS_H_ */

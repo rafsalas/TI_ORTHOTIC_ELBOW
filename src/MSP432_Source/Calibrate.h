@@ -8,8 +8,8 @@
  *      Author: Rafael Salas, Nathan Glaser, Joe Loredo, David Cuevas
  */
 
-#ifndef CALIBRATE_H_
-#define CALIBRATE_H_
+#ifndef MSP432_SOURCE_CALIBRATE_H_
+#define MSP432_SOURCE_CALIBRATE_H_
 #include <driverlib.h>
 
 extern double ANGLE_max;
@@ -25,4 +25,4 @@ extern void	lower_clk_rate();
 
 
 
-#endif /* CALIBRATE_H_ */
+#endif /* MSP432_SOURCE_CALIBRATE_H_ */

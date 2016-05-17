@@ -18,8 +18,8 @@
  *
  */
 
-#ifndef UART_COMMS_H_
-#define UART_COMMS_H_
+#ifndef MSP432_SOURCE_UART_COMMS_H_
+#define MSP432_SOURCE_UART_COMMS_H_
 
 #include <driverlib.h>
 
@@ -29,4 +29,4 @@ extern uint8_t Read_flag;
 void uart_setup();
 int *read_cal_angles();
 
-#endif /* UART_COMMS_H_ */
+#endif /* MSP432_SOURCE_UART_COMMS_H_ */
